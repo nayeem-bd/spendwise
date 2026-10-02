@@ -1,0 +1,2 @@
+-- Local dev seed data (runs on `npx supabase db reset`).
+-- Per-user defaults are created by the handle_new_user() trigger, not here.
