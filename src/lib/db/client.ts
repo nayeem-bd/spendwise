@@ -3,6 +3,7 @@ import { openDatabaseAsync } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
 import * as schema from './schema';
+import type { LocalDb } from './types';
 
 export const DATABASE_NAME = 'spendwise.db';
 
@@ -30,7 +31,7 @@ export function openDb(): Promise<Db> {
 }
 
 /** The open database. Only valid inside <DatabaseGate>, which awaits openDb(). */
-export function getDb(): Db {
+export function getDb(): LocalDb {
   if (!instance) throw new Error('Local database is not open yet; render inside <DatabaseGate>.');
   return instance;
 }
