@@ -7,6 +7,7 @@ import { PaperProvider } from 'react-native-paper';
 import { initAuth } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/auth/store';
 import { DatabaseGate } from '@/lib/db/DatabaseGate';
+import { startSync } from '@/lib/sync/syncEngine';
 import { darkTheme, lightTheme, navTheme } from '@/theme';
 
 export default function RootLayout() {
@@ -27,7 +28,11 @@ export default function RootLayout() {
 
 function AppStack() {
   const status = useAuthStore((s) => s.status);
+  const userId = useAuthStore((s) => s.user?.id);
   useEffect(initAuth, []);
+  useEffect(() => {
+    if (userId) startSync(userId); // signOut() stops it before wiping
+  }, [userId]);
 
   if (status === 'loading') return null;
   const signedIn = status === 'signedIn';

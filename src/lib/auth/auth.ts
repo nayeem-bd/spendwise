@@ -1,4 +1,4 @@
-import { count } from 'drizzle-orm';
+import { countDistinct } from 'drizzle-orm';
 
 import { getDb } from '@/lib/db/client';
 import { getMeta, setMeta } from '@/lib/db/meta';
@@ -6,6 +6,7 @@ import { outbox } from '@/lib/db/schema';
 import { seedDefaults } from '@/lib/db/seed';
 import { wipeLocalData } from '@/lib/db/wipe';
 import { supabase } from '@/lib/supabase';
+import { stopSync } from '@/lib/sync/syncEngine';
 
 import { useAuthStore, type LocalUser } from './store';
 
@@ -61,8 +62,23 @@ export async function signUp(email: string, password: string): Promise<'signedIn
   return 'signedIn';
 }
 
+/**
+ * Restores the Supabase session for the user already signed in locally
+ * (when it expired or was revoked). Keeps local data and unsynced changes.
+ */
+export async function reauthenticate(password: string): Promise<void> {
+  const local = readLocalUser();
+  if (!local) throw new AuthError('Not signed in');
+  const { data, error } = await supabase.auth.signInWithPassword({ email: local.email, password });
+  if (error) throw friendly(error);
+  if (data.user.id !== local.id) {
+    await supabase.auth.signOut({ scope: 'local' });
+    throw new AuthError('That login belongs to a different account');
+  }
+}
+
 export function pendingChangeCount(): number {
-  return getDb().select({ n: count() }).from(outbox).get()?.n ?? 0;
+  return getDb().select({ n: countDistinct(outbox.rowId) }).from(outbox).get()?.n ?? 0;
 }
 
 /**
@@ -70,6 +86,7 @@ export function pendingChangeCount(): number {
  * when pendingChangeCount() > 0, because those changes are lost.
  */
 export async function signOut(): Promise<void> {
+  await stopSync(); // no sync may write after the wipe
   // Removes the stored session even if the server can't be reached.
   await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
   wipeLocalData(getDb());
