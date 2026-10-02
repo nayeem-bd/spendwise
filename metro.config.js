@@ -9,7 +9,7 @@ config.resolver.assetExts.push('wasm');
 
 // SQLite-WASM needs SharedArrayBuffer, which needs these headers in dev too.
 config.server.enhanceMiddleware = (middleware) => (req, res, next) => {
-  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   return middleware(req, res, next);
 };
