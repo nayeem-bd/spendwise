@@ -1,4 +1,5 @@
 import { countDistinct } from 'drizzle-orm';
+import { Platform } from 'react-native';
 
 import { getDb } from '@/lib/db/client';
 import { getMeta, setMeta } from '@/lib/db/meta';
@@ -24,10 +25,40 @@ function readLocalUser(): LocalUser | null {
   return raw ? (JSON.parse(raw) as LocalUser) : null;
 }
 
+let listening = false;
+
 /** Restores the signed-in state from the local DB. Works offline. */
 export function initAuth(): void {
   const user = readLocalUser();
   useAuthStore.setState(user ? { status: 'signedIn', user } : { status: 'signedOut', user: null });
+
+  if (!listening) {
+    listening = true;
+    // Opening the email confirmation link on web lands here with a session in
+    // the URL (detectSessionInUrl); finish signing in instead of showing login.
+    // The client usually reads the URL before we subscribe, so the session
+    // arrives as INITIAL_SESSION rather than SIGNED_IN.
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== 'SIGNED_IN' && event !== 'INITIAL_SESSION') return;
+      if (!session || useAuthStore.getState().status !== 'signedOut') return;
+      const confirmed = { id: session.user.id, email: session.user.email ?? '' };
+      // Defer: supabase-js warns against doing work inside this callback.
+      setTimeout(() => {
+        if (useAuthStore.getState().status === 'signedOut') completeSignIn(confirmed);
+      }, 0);
+    });
+  }
+}
+
+/**
+ * Where the confirmation email sends people back to. Web: this site. Native:
+ * the hosted web app (the link opens in a browser), from EXPO_PUBLIC_SITE_URL.
+ * Supabase only honours URLs on the project's Redirect URLs allow list and
+ * otherwise falls back to its Site URL setting.
+ */
+function emailRedirectUrl(): string | undefined {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') return `${window.location.origin}/`;
+  return process.env.EXPO_PUBLIC_SITE_URL || undefined;
 }
 
 function completeSignIn(user: LocalUser) {
@@ -55,7 +86,11 @@ export async function signIn(email: string, password: string): Promise<void> {
 
 /** Returns 'confirmEmail' when the project requires email confirmation first. */
 export async function signUp(email: string, password: string): Promise<'signedIn' | 'confirmEmail'> {
-  const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: { emailRedirectTo: emailRedirectUrl() },
+  });
   if (error) throw friendly(error);
   if (!data.session || !data.user) return 'confirmEmail';
   completeSignIn({ id: data.user.id, email: data.user.email ?? email.trim() });
