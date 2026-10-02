@@ -139,6 +139,9 @@ isOneToOne: false
           Functions: {
             "default_row_id":
 { Args: { "p_key": string,"p_user_id": string }; Returns: string
+                           },
+"push_changes":
+{ Args: { "changes": Json }; Returns: Json
                            }
           }
           Enums: {

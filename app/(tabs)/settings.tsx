@@ -5,11 +5,22 @@ import { Button, Dialog, Divider, List, Portal, Text } from 'react-native-paper'
 
 import { pendingChangeCount, signOut } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/store';
+import { syncNow } from '@/lib/sync/syncEngine';
 
 export default function SettingsScreen() {
   const user = useUser();
   const [confirm, setConfirm] = useState<{ pending: number } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const askSignOut = async () => {
+    setBusy(true);
+    try {
+      await syncNow(); // push what we can first, so less is lost
+    } finally {
+      setBusy(false);
+      setConfirm({ pending: pendingChangeCount() });
+    }
+  };
 
   const doSignOut = async () => {
     setBusy(true);
@@ -44,8 +55,10 @@ export default function SettingsScreen() {
         <List.Item title={user.email} description="Signed in" left={(props) => <List.Icon {...props} icon="account" />} />
         <List.Item
           title="Sign out"
+          description={busy && !confirm ? 'Syncing first…' : undefined}
           left={(props) => <List.Icon {...props} icon="logout" />}
-          onPress={() => setConfirm({ pending: pendingChangeCount() })}
+          onPress={askSignOut}
+          disabled={busy}
         />
       </List.Section>
 
@@ -56,7 +69,7 @@ export default function SettingsScreen() {
             <Text>
               {confirm && confirm.pending > 0
                 ? `${confirm.pending} change${confirm.pending === 1 ? " hasn't" : "s haven't"} synced yet and will be lost. Your synced data stays in your account.`
-                : 'Data on this device will be removed. It stays in your account.'}
+                : 'Everything is synced. Data on this device will be removed; it stays in your account.'}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>

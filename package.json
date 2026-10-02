@@ -22,6 +22,7 @@
     "react-native-paper": "^5.15.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.2",
     "zustand": "^5.0.15"
   },
@@ -49,7 +50,8 @@
     "test": "jest",
     "db:generate": "drizzle-kit generate",
     "supabase:types": "supabase gen types typescript --local > src/lib/database.types.ts",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "test:integration": "sh -c 'eval \"$(supabase status -o env 2>/dev/null)\" && SUPABASE_TEST_URL=$API_URL SUPABASE_TEST_ANON_KEY=$ANON_KEY jest -c jest.integration.config.js'"
   },
   "private": true,
   "engines": {
@@ -62,7 +64,8 @@
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/src/test/"
+      "/src/test/",
+      "\\.integration\\.test\\.ts$"
     ]
   }
 }

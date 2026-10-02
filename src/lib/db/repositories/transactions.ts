@@ -1,4 +1,6 @@
-import { desc, eq, isNull } from 'drizzle-orm';
+import { and, between, desc, eq, isNull } from 'drizzle-orm';
+
+import { monthRange } from '@/utils/date';
 
 import type { Poisha } from '@/utils/money';
 
@@ -49,8 +51,13 @@ export function getTransaction(db: LocalDb, id: string): Transaction | undefined
   return db.select().from(transactions).where(eq(transactions.id, id)).get();
 }
 
-/** Newest first. Category/account names come from rows even if those were deleted. */
-export function listTransactions(db: LocalDb, limit = 200): TransactionListItem[] {
+/**
+ * Newest first, optionally for one month ('YYYY-MM'). Category/account names
+ * come from rows even if those were deleted.
+ */
+export function listTransactions(db: LocalDb, options: { month?: string; limit?: number } = {}): TransactionListItem[] {
+  const { month, limit = 1000 } = options;
+  const range = month ? monthRange(month) : null;
   return db
     .select({
       ...transactionColumns,
@@ -62,7 +69,7 @@ export function listTransactions(db: LocalDb, limit = 200): TransactionListItem[
     .from(transactions)
     .leftJoin(categories, eq(categories.id, transactions.categoryId))
     .leftJoin(accounts, eq(accounts.id, transactions.accountId))
-    .where(isNull(transactions.deletedAt))
+    .where(and(isNull(transactions.deletedAt), range ? between(transactions.occurredOn, range.start, range.end) : undefined))
     .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt))
     .limit(limit)
     .all();
@@ -84,3 +91,21 @@ const transactionColumns = {
   occurredOn: transactions.occurredOn,
   recurringId: transactions.recurringId,
 };
+
+export type DaySection = { day: string; net: Poisha; data: TransactionListItem[] };
+
+/** Groups a newest-first list into days, with each day's income minus expense. */
+export function groupByDay(items: readonly TransactionListItem[]): DaySection[] {
+  const sections: DaySection[] = [];
+  for (const item of items) {
+    let section = sections.at(-1);
+    if (!section || section.day !== item.occurredOn) {
+      section = { day: item.occurredOn, net: 0 as Poisha, data: [] };
+      sections.push(section);
+    }
+    section.data.push(item);
+    const signed = item.type === 'income' ? item.amount : item.type === 'expense' ? -item.amount : 0;
+    section.net = (section.net + signed) as Poisha;
+  }
+  return sections;
+}
