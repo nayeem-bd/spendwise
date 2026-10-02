@@ -10,6 +10,7 @@ Full plan: @PROJECT_PLAN.md (read the relevant section before starting a phase).
 - Sync: custom outbox push + pull by `server_seq` (PROJECT_PLAN.md section 5.1)
 - Hosting: Vercel (web), EAS Build (mobile). Everything on free tiers.
 - Node 24 LTS (see `.nvmrc`). Run `nvm use` before npm commands.
+- Package manager: **npm only** (commit `package-lock.json`; never use yarn/pnpm). Add Expo/RN packages with `npx expo install <pkg>` so versions match the SDK.
 
 ## Rules
 - UI reads and writes ONLY the local SQLite DB. Never call Supabase from screens; only `src/lib/sync/` talks to Supabase.
@@ -27,10 +28,24 @@ Full plan: @PROJECT_PLAN.md (read the relevant section before starting a phase).
 - Commit after each working step.
 - Test sync on a real device in airplane mode; test `formatBDT()` on Hermes too.
 
-## Commands (fill in after scaffolding)
-- Dev: `npx expo start`
-- iOS simulator: `npx expo run:ios`
-- Web build: `npx expo export -p web`
-- Local backend: `npx supabase start`
-- DB push: `npx supabase db push`
-- Types: `npx supabase gen types typescript --local > src/lib/database.types.ts`
+## Commands
+Run `nvm use` first. Packages come from npmjs.org via the project `.npmrc` (the global npmrc points at a company registry that blocks them).
+- Dev server: `npx expo start` (web: `npm run web`)
+- iOS simulator: `npx expo run:ios` · Android: `npx expo run:android`
+- Typecheck: `npm run typecheck` (`npx tsc --noEmit`)
+- Unit tests: `npm test` (jest-expo)
+- Health check: `npx expo-doctor`
+- Web build: `npx expo export -p web` → `dist/`
+- Local backend: `npx supabase start` (needs Docker) · stop: `npx supabase stop`
+- Reset local DB (re-run migrations + seed): `npx supabase db reset`
+- Backend tests (pgTAP, RLS + triggers): `npx supabase test db`
+- New Supabase migration: `npx supabase migration new <name>`
+- Push migrations to cloud: `npx supabase db push`
+- Supabase types: `npm run supabase:types`
+- Local SQLite migration after editing `src/lib/db/schema.ts`: `npm run db:generate`
+
+## Layout notes
+- Routes in `app/` (Expo Router). Local DB in `src/lib/db/` (`schema.ts`, generated `migrations/`, `client.ts`, `DatabaseGate.tsx`).
+- Use `getDb()` from `src/lib/db/client.ts`; `<DatabaseGate>` in `app/_layout.tsx` opens the DB (async, required on web) and runs migrations first.
+- Local schema mirrors Supabase but money is integer poisha, timestamps ISO text, no local FKs. Server money is `numeric(14,2)` taka; the sync layer converts.
+- Default accounts/categories use deterministic ids `uuidv5(user_id, '<kind>:<key>')` (see `handle_new_user()` in `supabase/migrations/`). Device-side seeding must use the same keys.
