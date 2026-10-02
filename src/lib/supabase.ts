@@ -19,7 +19,21 @@ const secureStorage: SupportedStorage = {
   removeItem: (key) => SecureStore.deleteItemAsync(key),
 };
 
+const REQUEST_TIMEOUT_MS = 20_000;
+
+/**
+ * fetch with a timeout. Without one, a request to an unresponsive server
+ * (captive portal, dead connection) hangs forever and blocks every later sync.
+ */
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error('Network request timed out')), REQUEST_TIMEOUT_MS);
+  init?.signal?.addEventListener('abort', () => controller.abort(init.signal?.reason));
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
 export const supabase = createClient<Database>(url, anonKey, {
+  global: { fetch: fetchWithTimeout },
   auth: {
     storage: Platform.OS === 'web' ? undefined : secureStorage,
     autoRefreshToken: true,

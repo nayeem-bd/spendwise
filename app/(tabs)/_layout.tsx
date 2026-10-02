@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 
 import type { IconName } from '@/components/IconBadge';
+import { SyncBadge } from '@/components/SyncBadge';
 
 const icon =
   (name: IconName) =>
@@ -10,7 +11,7 @@ const icon =
 
 export default function TabsLayout() {
   return (
-    <Tabs>
+    <Tabs screenOptions={{ headerRight: () => <SyncBadge /> }}>
       <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: icon('chart-pie') }} />
       <Tabs.Screen name="transactions" options={{ title: 'Transactions', tabBarIcon: icon('format-list-bulleted') }} />
       <Tabs.Screen name="budgets" options={{ title: 'Budgets', tabBarIcon: icon('target') }} />
