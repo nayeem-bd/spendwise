@@ -1,0 +1,20 @@
+[build]
+  command = "npx expo export -p web"
+  publish = "dist"
+  # Node version comes from .nvmrc; packages from the public registry via .npmrc.
+  # Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in the Netlify UI:
+  # Expo inlines them at build time.
+
+# SQLite-WASM needs SharedArrayBuffer, which needs cross-origin isolation.
+# require-corp (not credentialless) because Safari only supports require-corp.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Embedder-Policy = "require-corp"
+    Cross-Origin-Opener-Policy = "same-origin"
+
+# Single-page app: let deep links like /transactions load index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -8,7 +8,7 @@ Full plan: @PROJECT_PLAN.md (read the relevant section before starting a phase).
 - Local DB: expo-sqlite + Drizzle ORM (SQLite-WASM on web)
 - Backend: Supabase (Postgres + Auth + RLS), code lives in `supabase/` in this repo
 - Sync: custom outbox push + pull by `server_seq` (PROJECT_PLAN.md section 5.1)
-- Hosting: Vercel (web), EAS Build (mobile). Everything on free tiers.
+- Hosting: Netlify (web, config in `netlify.toml`), EAS Build (mobile). Everything on free tiers.
 - Node 24 LTS (see `.nvmrc`). Run `nvm use` before npm commands.
 - Package manager: **npm only** (commit `package-lock.json`; never use yarn/pnpm). Add Expo/RN packages with `npx expo install <pkg>` so versions match the SDK.
 

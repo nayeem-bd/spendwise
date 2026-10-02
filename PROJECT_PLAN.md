@@ -23,9 +23,9 @@ A simple, fast app for tracking monthly income and spending. You add an expense 
 | Sync | **Custom outbox + pull sync** (fully free); option: PowerSync | Syncs local changes to Supabase when back online (see section 5.1) |
 | Network detection | @react-native-community/netinfo | Starts a sync when the device reconnects |
 | Backend + Database | **Supabase** (Postgres + Auth + Row Level Security) | Free tier, no server code to write, built-in auth |
-| Web hosting | **Vercel** or **Cloudflare Pages** | Free static hosting, auto-deploys from GitHub |
+| Web hosting | **Netlify** | Free static hosting, auto-deploys from GitHub |
 | Mobile builds | **EAS Build** (Expo) | Free tier gives a limited number of cloud builds per month |
-| Package manager | **npm** (`npx expo install` for Expo packages) | Comes with Node, the Expo default, auto-detected by EAS and Vercel |
+| Package manager | **npm** (`npx expo install` for Expo packages) | Comes with Node, the Expo default, auto-detected by EAS and Netlify |
 | Code / CI | GitHub + GitHub Actions | Free |
 
 **Decision: React Native (Expo), not Flutter.**
@@ -62,7 +62,7 @@ Pin the same version everywhere:
 |---|---|
 | Project | `.nvmrc` containing `24` |
 | package.json | `"engines": { "node": ">=24 <25" }` |
-| Vercel | Project Settings → Node.js Version → 24.x |
+| Netlify | Reads `.nvmrc` automatically (or set `NODE_VERSION=24`) |
 | EAS | `eas.json` → `"build": { "base": { "node": "24" } }` |
 
 Node 26 becomes LTS around late October 2026. Move to it once the Expo SDK officially supports it.
@@ -207,7 +207,7 @@ create policy "own rows" on transactions
 ```
  ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
  │  Web (PWA)    │   │  Android app  │   │   iOS app     │
- │ Vercel/CF     │   │  (EAS build)  │   │  (EAS build)  │
+ │ Netlify       │   │  (EAS build)  │   │  (EAS build)  │
  └──────┬────────┘   └──────┬────────┘   └──────┬────────┘
         └────────── same Expo codebase ─────────┘
                            │
@@ -303,7 +303,7 @@ A personal expense app rarely edits the same row on two devices at once, so last
 - Schema changes: local Drizzle migrations plus a `schema_version` check. If the app is too old for the server, ask the user to update before syncing.
 
 **Web offline:**
-- Use expo-sqlite web (SQLite-WASM, stored in OPFS). This needs the `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers, which you set in `vercel.json` or `_headers`.
+- Use expo-sqlite web (SQLite-WASM, stored in OPFS). This needs the `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers, which are set in `netlify.toml`. Use `COEP: require-corp`, not `credentialless`: Safari only supports `require-corp`.
 - Add a service worker (Workbox) so the PWA loads with no internet.
 - If WASM SQLite causes problems on some browser, you can swap in IndexedDB (via Dexie) behind the same repository interface.
 
@@ -355,7 +355,7 @@ spendwise/
 
 | Part | Runs on | Deploy |
 |---|---|---|
-| Frontend (web) | Vercel / Cloudflare Pages | Auto on `git push` |
+| Frontend (web) | Netlify | Auto on `git push` |
 | Frontend (mobile) | Phones | `eas build` / `eas update` |
 | Database, RLS, RPC | Supabase | `npx supabase db push` |
 | Edge Functions | Supabase | `npx supabase functions deploy` |
@@ -401,7 +401,7 @@ Add unit tests for: `0`, `৳50`, `৳1,25,000`, `৳1,00,00,000`, `৳250.50`, 
 | 1 | Set up Expo + TypeScript, Supabase project, migrations (with sync columns), RLS, auth screens, **local SQLite + Drizzle setup** |
 | 2 | Categories + accounts CRUD (local DB + outbox), seed defaults, Add Transaction screen with amount keypad |
 | 3 | **Sync engine** (push/pull RPC, triggers, status badge) + home screen: pie chart, month switcher, totals, transaction list |
-| 4 | Sync tests (checklist in section 5.1), settings, PWA offline, **deploy web to Vercel**, Android preview APK (**MVP done**) |
+| 4 | Sync tests (checklist in section 5.1), settings, PWA offline, **deploy web to Netlify**, Android preview APK (**MVP done**) |
 | 5–6 | Budgets, multiple accounts, transfers, recurring transactions |
 | 7 | Reports, search/filter, CSV export |
 | 8 | Background sync, more testing, store submission (optional) |
@@ -412,7 +412,7 @@ Add unit tests for: `0`, `৳50`, `৳1,25,000`, `৳1,00,00,000`, `৳250.50`, 
 
 1. **Supabase**: create a project at supabase.com, run the migrations (`supabase db push`), and copy the URL and anon key.
 2. **Env vars**: set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`. The anon key is safe to ship because RLS protects the data.
-3. **Web**: run `npx expo export --platform web` to get a `dist/` folder. Connect the GitHub repo to Vercel or Cloudflare Pages (build command `npx expo export -p web`, output `dist`). Every push then auto-deploys.
+3. **Web**: run `npx expo export --platform web` to get a `dist/` folder. Connect the GitHub repo to Netlify; `netlify.toml` sets the build command (`npx expo export -p web`), output (`dist`), headers and SPA redirect. Add the two `EXPO_PUBLIC_*` env vars in Netlify's site settings, because Expo inlines them at build time. Every push then auto-deploys.
 4. **Android**: `eas build -p android --profile preview` produces an **APK you can share for free** (by link or Google Drive).
 5. **iOS**: for testing, use the Simulator or a development build. TestFlight and the App Store need a paid Apple account (see section 8.1).
 6. **Updates**: `eas update` pushes JS changes to installed apps without rebuilding (free tier).
@@ -451,12 +451,12 @@ The same Expo codebase builds for iOS, so there's no separate project.
 | Item | Cost |
 |---|---|
 | Supabase (500 MB DB, 50k monthly users, 1 GB storage) | **Free** |
-| Vercel / Cloudflare Pages hosting | **Free** |
+| Netlify hosting | **Free** |
 | EAS Build / Update (limited monthly quota) | **Free** |
 | Android APK shared directly | **Free** |
 | Google Play Store listing | $25 one-time (optional) |
 | Apple App Store | $99/year (optional) |
-| Custom domain | ~$10/year (optional; a `*.vercel.app` URL is free) |
+| Custom domain | ~$10/year (optional; a `*.netlify.app` URL is free) |
 
 **Free-tier caveat:** Supabase **pauses free projects after about 1 week of no activity**. You can resume it with one click in the dashboard. A small GitHub Actions cron job that pings the API every few days keeps it awake. Free-tier limits change, so check them before you launch.
 
@@ -516,7 +516,7 @@ Implement the sync engine from section 5.1: the push_changes RPC, pull by server
 ```
 **Week 4:**
 ```
-Write tests for the sync checklist in section 5.1. Add PWA offline support and the COOP/COEP headers, and deploy the web app to Vercel.
+Write tests for the sync checklist in section 5.1. Add PWA offline support and the COOP/COEP headers, and deploy the web app to Netlify.
 ```
 **iOS:**
 ```
