@@ -59,7 +59,10 @@ async function runOnce(forUser: string): Promise<void> {
     return;
   }
 
-  set({ status: 'syncing', error: null });
+  // After a failure, keep showing it during retries until one succeeds;
+  // flipping to "Syncing…" for each slow attempt would hide that we're offline.
+  const { status } = useSyncStore.getState();
+  if (status !== 'offline' && status !== 'error') set({ status: 'syncing', error: null });
   const db = getDb();
   try {
     await pushAll(db, backend); // always push before pull
