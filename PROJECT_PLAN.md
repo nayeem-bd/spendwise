@@ -25,6 +25,7 @@ A simple, fast app for tracking monthly income and spending. You add an expense 
 | Backend + Database | **Supabase** (Postgres + Auth + Row Level Security) | Free tier, no server code to write, built-in auth |
 | Web hosting | **Vercel** or **Cloudflare Pages** | Free static hosting, auto-deploys from GitHub |
 | Mobile builds | **EAS Build** (Expo) | Free tier gives a limited number of cloud builds per month |
+| Package manager | **npm** (`npx expo install` for Expo packages) | Comes with Node, the Expo default, auto-detected by EAS and Vercel |
 | Code / CI | GitHub + GitHub Actions | Free |
 
 **Decision: React Native (Expo), not Flutter.**
