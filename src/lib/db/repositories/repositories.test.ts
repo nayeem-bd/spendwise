@@ -14,7 +14,7 @@ import {
   listAccountsWithBalance,
 } from './accounts';
 import { createCategory, deleteCategory, listCategories, updateCategory } from './categories';
-import { deleteTransaction, listTransactions, saveTransaction, type TransactionInput } from './transactions';
+import { deleteTransaction, groupByDay, listTransactions, saveTransaction, type TransactionInput } from './transactions';
 import { ValidationError } from './validate';
 
 const USER = '11111111-1111-1111-1111-111111111111';
@@ -161,5 +161,21 @@ describe('wipeLocalData', () => {
     expect(listAccounts(db)).toHaveLength(0);
     expect(listTransactions(db)).toHaveLength(0);
     expect(outboxRows(db)).toHaveLength(0);
+  });
+});
+
+describe('listTransactions by month and groupByDay', () => {
+  it('filters by month and groups newest day first with net totals', () => {
+    saveTransaction(db, USER, expense({ occurredOn: '2026-10-03', amount: p(1000) }));
+    saveTransaction(db, USER, { ...expense({ occurredOn: '2026-10-03', amount: p(5000) }), type: 'income', categoryId: salary() });
+    saveTransaction(db, USER, expense({ occurredOn: '2026-10-01', amount: p(300) }));
+    saveTransaction(db, USER, expense({ occurredOn: '2026-09-30', amount: p(999) }));
+
+    const october = listTransactions(db, { month: '2026-10' });
+    expect(october).toHaveLength(3);
+    expect(groupByDay(october).map((s) => [s.day, s.data.length, s.net])).toEqual([
+      ['2026-10-03', 2, 4000],
+      ['2026-10-01', 1, -300],
+    ]);
   });
 });
