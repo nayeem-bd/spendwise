@@ -10,6 +10,7 @@ Full plan: @PROJECT_PLAN.md (read the relevant section before starting a phase).
 - Sync: custom outbox push + pull by `server_seq` (PROJECT_PLAN.md section 5.1)
 - Hosting: Vercel (web), EAS Build (mobile). Everything on free tiers.
 - Node 24 LTS (see `.nvmrc`). Run `nvm use` before npm commands.
+- Package manager: **npm only** (commit `package-lock.json`; never use yarn/pnpm). Add Expo/RN packages with `npx expo install <pkg>` so versions match the SDK.
 
 ## Rules
 - UI reads and writes ONLY the local SQLite DB. Never call Supabase from screens; only `src/lib/sync/` talks to Supabase.
