@@ -29,3 +29,26 @@ export function formatDay(iso: string, today = todayISO()): string {
   const d = toUTC(iso);
   return `${DAYS[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
+
+// ---- Months ('YYYY-MM') ----
+
+export const monthOf = (iso: string): string => iso.slice(0, 7);
+
+export function addMonths(month: string, n: number): string {
+  const [y, m] = month.split('-').map(Number);
+  const index = y! * 12 + (m! - 1) + n;
+  return `${Math.floor(index / 12)}-${pad((index % 12) + 1)}`;
+}
+
+/** First and last day of a month as 'YYYY-MM-DD'. */
+export function monthRange(month: string): { start: string; end: string } {
+  const [y, m] = month.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(y!, m!, 0)).getUTCDate();
+  return { start: `${month}-01`, end: `${month}-${pad(lastDay)}` };
+}
+
+/** "Oct 2026" */
+export function formatMonth(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  return `${MONTHS[m! - 1]} ${y}`;
+}
