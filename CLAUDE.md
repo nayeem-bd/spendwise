@@ -13,7 +13,7 @@ Full plan: @PROJECT_PLAN.md (read the relevant section before starting a phase).
 - Package manager: **npm only** (commit `package-lock.json`; never use yarn/pnpm). Add Expo/RN packages with `npx expo install <pkg>` so versions match the SDK.
 
 ## Rules
-- UI reads and writes ONLY the local SQLite DB. Never call Supabase from screens; only `src/lib/sync/` talks to Supabase.
+- UI reads and writes ONLY the local SQLite DB. Never call Supabase from screens; only `src/lib/sync/` and `src/lib/auth/` talk to Supabase.
 - Every local write = row upsert + outbox insert in ONE SQLite transaction.
 - IDs are UUIDs generated on the device. Soft deletes only (`deleted_at`), never hard deletes.
 - Money is always the `Poisha` branded type (integer, ৳1 = 100 poisha). Format only with `formatBDT()`. Currency is **BDT only**.

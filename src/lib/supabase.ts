@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 import type { Database } from './database.types';
 
-// Only src/lib/sync (and the auth flow) may import this. Screens use the local DB.
+// Only src/lib/sync and src/lib/auth may import this. Screens use the local DB.
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;

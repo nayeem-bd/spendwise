@@ -96,6 +96,12 @@ export const syncState = sqliteTable('sync_state', {
   lastSeq: integer('last_seq').notNull().default(0), // highest server_seq pulled so far
 });
 
+/** Device-only key/value settings, e.g. the signed-in user. */
+export const localMeta = sqliteTable('local_meta', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
+
 export const syncedTables = {
   accounts,
   categories,
