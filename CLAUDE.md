@@ -34,6 +34,7 @@ Run `nvm use` first. Packages come from npmjs.org via the project `.npmrc` (the 
 - iOS simulator: `npx expo run:ios` · Android: `npx expo run:android`
 - Typecheck: `npm run typecheck` (`npx tsc --noEmit`)
 - Unit tests: `npm test` (jest-expo)
+- Sync integration tests against local Supabase: `npm run test:integration` (needs `npx supabase start`; plain-Node jest config because jest-expo stubs `fetch`)
 - Health check: `npx expo-doctor`
 - Web build: `npx expo export -p web` → `dist/`
 - Local backend: `npx supabase start` (needs Docker) · stop: `npx supabase stop`
@@ -48,4 +49,5 @@ Run `nvm use` first. Packages come from npmjs.org via the project `.npmrc` (the 
 - Routes in `app/` (Expo Router). Local DB in `src/lib/db/` (`schema.ts`, generated `migrations/`, `client.ts`, `DatabaseGate.tsx`).
 - Use `getDb()` from `src/lib/db/client.ts`; `<DatabaseGate>` in `app/_layout.tsx` opens the DB (async, required on web) and runs migrations first.
 - Local schema mirrors Supabase but money is integer poisha, timestamps ISO text, no local FKs. Server money is `numeric(14,2)` taka; the sync layer converts.
+- Sync lives in `src/lib/sync/`: `push.ts` / `pull.ts` (pure logic over a `SyncBackend`), `supabaseBackend.ts`, `syncEngine.ts` (triggers, backoff, status store). The server side is the `push_changes` RPC (LWW on `updated_at`, returns current rows, per-user advisory lock). Any code that writes synced rows outside `write.ts` must call `notifyChanged()`.
 - Default accounts/categories use deterministic ids `uuidv5(user_id, '<kind>:<key>')` (see `handle_new_user()` in `supabase/migrations/`). Device-side seeding must use the same keys.
