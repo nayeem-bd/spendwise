@@ -1,3 +1,5 @@
+import { localDigits, type Lang } from './digits';
+
 // Dates are plain 'YYYY-MM-DD' strings in the user's local calendar.
 // Arithmetic is done in UTC on those strings so DST never shifts a day.
 
@@ -18,16 +20,31 @@ export function addDays(iso: string, days: number): string {
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
 }
 
-const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const NAMES = {
+  en: {
+    days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    today: 'Today',
+    yesterday: 'Yesterday',
+    tomorrow: 'Tomorrow',
+  },
+  bn: {
+    days: ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহস্পতি', 'শুক্র', 'শনি'],
+    months: ['জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'],
+    today: 'আজ',
+    yesterday: 'গতকাল',
+    tomorrow: 'আগামীকাল',
+  },
+} as const;
 
-/** "Today", "Yesterday", or "Sat, 3 Oct 2026". */
-export function formatDay(iso: string, today = todayISO()): string {
-  if (iso === today) return 'Today';
-  if (iso === addDays(today, -1)) return 'Yesterday';
-  if (iso === addDays(today, 1)) return 'Tomorrow';
+/** "Today", "Yesterday", or "Sat, 3 Oct 2026" (Bangla: "আজ", "শনি, ৩ অক্টো ২০২৬"). */
+export function formatDay(iso: string, today = todayISO(), lang: Lang = 'en'): string {
+  const names = NAMES[lang];
+  if (iso === today) return names.today;
+  if (iso === addDays(today, -1)) return names.yesterday;
+  if (iso === addDays(today, 1)) return names.tomorrow;
   const d = toUTC(iso);
-  return `${DAYS[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  return localDigits(`${names.days[d.getUTCDay()]}, ${d.getUTCDate()} ${names.months[d.getUTCMonth()]} ${d.getUTCFullYear()}`, lang);
 }
 
 // ---- Months ('YYYY-MM') ----
@@ -48,9 +65,9 @@ export function monthRange(month: string): { start: string; end: string } {
 }
 
 /** "Oct 2026" */
-export function formatMonth(month: string): string {
+export function formatMonth(month: string, lang: Lang = 'en'): string {
   const [y, m] = month.split('-').map(Number);
-  return `${MONTHS[m! - 1]} ${y}`;
+  return localDigits(`${NAMES[lang].months[m! - 1]} ${y}`, lang);
 }
 
 // ---- Recurrence ----

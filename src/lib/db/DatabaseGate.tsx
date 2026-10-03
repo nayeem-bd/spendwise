@@ -2,6 +2,8 @@ import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
+import { translate } from '@/i18n/i18n';
+
 import { DatabaseLockedError, openDb, type Db } from './client';
 import migrations from './migrations/migrations';
 
@@ -30,7 +32,7 @@ function Migrate({ db, children }: { db: Db; children: ReactNode }) {
 // Drizzle wraps driver errors; the useful message is in `cause`.
 const describe = (error: Error) =>
   error instanceof DatabaseLockedError
-    ? error.message
+    ? translate('error.lockedTab')
     : `Database error: ${error.message}${error.cause instanceof Error ? `\n${error.cause.message}` : ''}`;
 
 function Loading() {

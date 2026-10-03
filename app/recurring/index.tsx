@@ -2,38 +2,41 @@ import { router, Stack } from 'expo-router';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { List, Text, useTheme } from 'react-native-paper';
 
-import { FREQUENCY_LABEL } from '@/components/frequency';
+import { FREQUENCY_KEY } from '@/components/frequency';
 import { IconBadge } from '@/components/IconBadge';
+import { useT } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
+import { useFormat } from '@/i18n/useFormat';
 import { listRecurring } from '@/lib/db/repositories/recurring';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { moneyColors } from '@/theme';
-import { formatDay } from '@/utils/date';
-import { formatBDT } from '@/utils/money';
 
 export default function RecurringListScreen() {
   const theme = useTheme();
+  const { t } = useT();
+  const f = useFormat();
+  const name = useDisplayName();
   const colors = moneyColors(theme.dark);
   const rules = useLocalQuery(listRecurring, ['recurring_rules', 'categories', 'accounts']);
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Repeating transactions' }} />
+      <Stack.Screen options={{ title: t('recurring.title') }} />
       <FlatList
         data={rules}
         keyExtractor={(r) => r.id}
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            Nothing repeats yet. When adding a transaction, choose Repeat → Monthly for rent, salary or subscriptions.
-          </Text>
+          <Text style={styles.empty}>{t('recurring.empty')}</Text>
         }
         renderItem={({ item }) => {
-          const t = item.template;
-          const transfer = t.type === 'transfer';
-          const schedule = `${FREQUENCY_LABEL[item.frequency ?? 'monthly']} · ${item.active ? `next ${formatDay(item.nextRun)}` : 'paused'}`;
+          const tpl = item.template;
+          const transfer = tpl.type === 'transfer';
+          const schedule = `${t(FREQUENCY_KEY[item.frequency ?? 'monthly'])} · ${item.active ? t('recurring.next', { day: f.day(item.nextRun) }) : t('recurring.paused')}`;
+          const account = name(tpl.accountId, item.accountName);
           return (
             <List.Item
-              title={transfer ? 'Transfer' : (item.categoryName ?? 'Uncategorized')}
-              description={[schedule, transfer ? `${item.accountName} → ${item.toAccountName}` : item.accountName, t.note]
+              title={transfer ? t('type.transfer') : name(tpl.categoryId, item.categoryName) || t('common.uncategorized')}
+              description={[schedule, transfer ? `${account} → ${name(tpl.toAccountId, item.toAccountName)}` : account, tpl.note]
                 .filter(Boolean)
                 .join(' · ')}
               style={!item.active && styles.paused}
@@ -49,10 +52,10 @@ export default function RecurringListScreen() {
                 <Text
                   style={[
                     styles.amount,
-                    { color: transfer ? theme.colors.onSurfaceVariant : t.type === 'income' ? colors.income : colors.expense },
+                    { color: transfer ? theme.colors.onSurfaceVariant : tpl.type === 'income' ? colors.income : colors.expense },
                   ]}
                 >
-                  {formatBDT(t.amount)}
+                  {f.money(tpl.amount)}
                 </Text>
               )}
               onPress={() => router.push({ pathname: '/recurring/[id]', params: { id: item.id } })}

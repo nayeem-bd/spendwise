@@ -1,3 +1,5 @@
+import { toBanglaDigits } from './digits';
+
 /** Integer amount in poisha (৳1 = 100 poisha). The brand stops raw numbers or taka slipping in. */
 export type Poisha = number & { __brand: 'poisha' };
 
@@ -8,8 +10,6 @@ export const ZERO = 0 as Poisha;
 export const addPoisha = (...amounts: Poisha[]): Poisha =>
   amounts.reduce<number>((sum, a) => sum + a, 0) as Poisha;
 
-const BANGLA_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-const toBanglaDigits = (s: string) => s.replace(/\d/g, (d) => BANGLA_DIGITS[Number(d)] ?? d);
 
 /** Groups an integer string South Asian style: 1,00,00,000 (last 3 digits, then pairs). */
 function groupLakh(digits: string): string {
@@ -35,22 +35,23 @@ export function formatBDT(amount: Poisha, opts: { bangla?: boolean } = {}): stri
   return `${sign}৳${text}`;
 }
 
-/** Short form for charts: ৳950, ৳12.5K, ৳1.2L, ৳3.5Cr. */
-export function formatBDTCompact(amount: Poisha): string {
+/** Short form for charts: ৳950, ৳12.5K, ৳1.2L, ৳3.5Cr (Bangla: ৳১.২ লাখ). */
+export function formatBDTCompact(amount: Poisha, opts: { bangla?: boolean } = {}): string {
   const sign = amount < 0 ? '-' : '';
   const taka = Math.abs(amount) / 100;
-  const units: [number, string][] = [
-    [1_00_00_000, 'Cr'],
-    [1_00_000, 'L'],
-    [1_000, 'K'],
+  const units: [number, string, string][] = [
+    [1_00_00_000, 'Cr', ' কোটি'],
+    [1_00_000, 'L', ' লাখ'],
+    [1_000, 'K', ' হাজার'],
   ];
-  for (const [size, suffix] of units) {
+  const digits = (s: string) => (opts.bangla ? toBanglaDigits(s) : s);
+  for (const [size, suffix, bnSuffix] of units) {
     if (taka >= size) {
       const value = Math.floor((taka / size) * 10) / 10; // truncate so ৳99,999 never shows as ৳100K
-      return `${sign}৳${value.toString()}${suffix}`;
+      return `${sign}৳${digits(value.toString())}${opts.bangla ? bnSuffix : suffix}`;
     }
   }
-  return `${sign}৳${Math.floor(taka)}`;
+  return `${sign}৳${digits(String(Math.floor(taka)))}`;
 }
 
 /**

@@ -6,6 +6,7 @@ import { getMeta, setMeta } from '@/lib/db/meta';
 import { outbox } from '@/lib/db/schema';
 import { seedDefaults } from '@/lib/db/seed';
 import { wipeLocalData } from '@/lib/db/wipe';
+import { cancelReminders } from '@/lib/reminder/reminder';
 import { supabase } from '@/lib/supabase';
 import { stopSync } from '@/lib/sync/syncEngine';
 
@@ -122,6 +123,7 @@ export function pendingChangeCount(): number {
  */
 export async function signOut(): Promise<void> {
   await stopSync(); // no sync may write after the wipe
+  await cancelReminders();
   // Removes the stored session even if the server can't be reached.
   await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
   wipeLocalData(getDb());
