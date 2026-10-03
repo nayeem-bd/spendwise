@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
+import type { Frequency } from '@/utils/date';
 import type { Poisha } from '@/utils/money';
 
 // Local mirror of the Supabase tables in supabase/migrations.
@@ -10,7 +11,7 @@ import type { Poisha } from '@/utils/money';
 
 export type TransactionType = 'expense' | 'income' | 'transfer';
 export type CategoryType = 'expense' | 'income';
-export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type { Frequency };
 
 const nowIso = sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`;
 

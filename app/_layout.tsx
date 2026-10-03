@@ -7,6 +7,7 @@ import { PaperProvider } from 'react-native-paper';
 import { initAuth } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/auth/store';
 import { DatabaseGate } from '@/lib/db/DatabaseGate';
+import { NoticeSnackbar } from '@/components/NoticeSnackbar';
 import { UpdateSnackbar } from '@/components/UpdateSnackbar';
 import { registerServiceWorker } from '@/lib/pwa';
 import { startSync } from '@/lib/sync/syncEngine';
@@ -29,6 +30,7 @@ export default function RootLayout() {
         </DatabaseGate>
         <StatusBar style={dark ? 'light' : 'dark'} />
         <UpdateSnackbar />
+        <NoticeSnackbar />
       </ThemeProvider>
     </PaperProvider>
   );
@@ -57,6 +59,9 @@ function AppStack() {
         <Stack.Screen name="categories/[id]" />
         <Stack.Screen name="accounts/index" />
         <Stack.Screen name="accounts/[id]" />
+        <Stack.Screen name="budget/edit" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="recurring/index" />
+        <Stack.Screen name="recurring/[id]" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
