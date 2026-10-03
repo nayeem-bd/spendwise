@@ -37,8 +37,9 @@ export function supabaseBackend(client: SupabaseClient<Database>): SyncBackend {
   return {
     pushChanges: (changes) =>
       call(() => client.rpc('push_changes', { changes: changes as unknown as Json })).then((data) => (data ?? {}) as PushResult),
+    // pull_changes waits for in-flight writes so no lower server_seq can still appear (see migration).
     pullChanges: (table, since, limit) =>
-      call(() => client.from(table).select('*').gt('server_seq', since).order('server_seq').limit(limit)).then(
+      call(() => client.rpc('pull_changes', { p_table: table, p_since: since, p_limit: limit })).then(
         (data) => (data ?? []) as unknown as ServerRow[],
       ),
   };

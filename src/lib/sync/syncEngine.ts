@@ -6,6 +6,7 @@ import { onTablesChanged } from '@/lib/db/changes';
 import { getDb, openDb } from '@/lib/db/client';
 import { getMeta } from '@/lib/db/meta';
 import { materializeRecurring } from '@/lib/db/repositories/recurring';
+import { purgeEndedMemberships } from '@/lib/db/repositories/sharing';
 import { outbox } from '@/lib/db/schema';
 import { supabase } from '@/lib/supabase';
 import { todayISO } from '@/utils/date';
@@ -85,6 +86,7 @@ async function runOnce(forUser: string): Promise<void> {
     await pushAll(db, backend); // always push before pull
     if (userId !== forUser) return; // signed out meanwhile
     await pullAll(db, backend);
+    purgeEndedMemberships(db, forUser); // left or removed from a shared account
     runRecurring(); // rules or next_run changes may have arrived from another device
     failures = 0;
     set({ status: 'idle', lastSyncedAt: Date.now(), error: null });
@@ -132,7 +134,12 @@ export function startSync(forUser: string): void {
     onTablesChanged((tables) => {
       if (!tables.has('outbox')) return;
       refreshPending();
-      if (running) return; // a sync is already going; its pending refresh will follow
+      // A sync is running: it may already be past its push, so queue one more
+      // run (syncNow's loop) instead of dropping this change until the next trigger.
+      if (running) {
+        rerun = true;
+        return;
+      }
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => void syncNow(), WRITE_DEBOUNCE_MS);
     }),

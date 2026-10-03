@@ -15,12 +15,21 @@ const MONEY_COLUMNS: Record<SyncedTableName, readonly string[]> = {
   budgets: ['amount'],
   recurring_rules: [],
   attachments: [],
+  account_members: [],
 };
 
 const TIMESTAMP_COLUMNS = new Set(['createdAt', 'updatedAt', 'deletedAt']);
 
 /** Parents before children, so foreign keys hold within one push. */
-export const TABLE_ORDER: readonly SyncedTableName[] = ['accounts', 'categories', 'recurring_rules', 'transactions', 'budgets', 'attachments'];
+export const TABLE_ORDER: readonly SyncedTableName[] = [
+  'accounts',
+  'account_members',
+  'categories',
+  'recurring_rules',
+  'transactions',
+  'budgets',
+  'attachments',
+];
 
 /** 25050 → "250.50". A string, so Postgres numeric gets the exact value. */
 export function poishaToTakaString(poisha: number): string {
