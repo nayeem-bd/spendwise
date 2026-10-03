@@ -1,4 +1,4 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
@@ -11,6 +11,7 @@ import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { createAccount, deleteAccount, getAccount, updateAccount } from '@/lib/db/repositories/accounts';
 import { parseTaka, poishaToInput, ZERO } from '@/utils/money';
+import { goBack } from '@/lib/nav';
 
 export default function AccountEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -40,7 +41,7 @@ export default function AccountEditScreen() {
       const db = getDb();
       if (isNew) createAccount(db, user.id, { name, initialBalance, icon, color });
       else updateAccount(db, id, { name, initialBalance, icon, color });
-      router.back();
+      goBack();
     } catch (e) {
       setError(translateError(e));
     }
@@ -50,7 +51,7 @@ export default function AccountEditScreen() {
     setConfirmDelete(false);
     try {
       deleteAccount(getDb(), id);
-      router.back();
+      goBack();
     } catch (e) {
       setError(translateError(e));
     }

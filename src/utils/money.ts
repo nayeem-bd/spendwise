@@ -1,3 +1,5 @@
+import { toBanglaDigits } from './digits';
+
 /** Integer amount in poisha (৳1 = 100 poisha). The brand stops raw numbers or taka slipping in. */
 export type Poisha = number & { __brand: 'poisha' };
 
@@ -8,7 +10,6 @@ export const ZERO = 0 as Poisha;
 export const addPoisha = (...amounts: Poisha[]): Poisha =>
   amounts.reduce<number>((sum, a) => sum + a, 0) as Poisha;
 
-import { toBanglaDigits } from './digits';
 
 /** Groups an integer string South Asian style: 1,00,00,000 (last 3 digits, then pairs). */
 function groupLakh(digits: string): string {

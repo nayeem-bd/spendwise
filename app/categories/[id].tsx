@@ -1,4 +1,4 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, SegmentedButtons, Text, TextInput } from 'react-native-paper';
@@ -11,6 +11,7 @@ import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { createCategory, deleteCategory, getCategory, updateCategory } from '@/lib/db/repositories/categories';
 import type { CategoryType } from '@/lib/db/schema';
+import { goBack } from '@/lib/nav';
 
 export default function CategoryEditScreen() {
   const { id, type: typeParam } = useLocalSearchParams<{ id: string; type?: CategoryType }>();
@@ -35,7 +36,7 @@ export default function CategoryEditScreen() {
       const db = getDb();
       if (isNew) createCategory(db, user.id, { name, type, icon, color });
       else updateCategory(db, id, { name, icon, color });
-      router.back();
+      goBack();
     } catch (e) {
       setError(translateError(e));
     }
@@ -44,7 +45,7 @@ export default function CategoryEditScreen() {
   const remove = () => {
     deleteCategory(getDb(), id);
     setConfirmDelete(false);
-    router.back();
+    goBack();
   };
 
   return (

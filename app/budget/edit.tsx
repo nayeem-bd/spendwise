@@ -1,4 +1,4 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
@@ -13,6 +13,7 @@ import { translate, translateError, useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
 import { useFormat } from '@/i18n/useFormat';
 import { parseTaka, poishaToInput } from '@/utils/money';
+import { goBack } from '@/lib/nav';
 
 /** params.category: 'total' (whole month), 'new' (pick a category) or a category id. */
 export default function BudgetEditScreen() {
@@ -58,7 +59,7 @@ export default function BudgetEditScreen() {
     }
     try {
       setBudget(getDb(), user.id, { categoryId, month, amount });
-      router.back();
+      goBack();
     } catch (e) {
       setError(translateError(e));
     }
@@ -67,7 +68,7 @@ export default function BudgetEditScreen() {
   const remove = () => {
     removeBudget(getDb(), user.id, categoryId, month);
     setConfirmRemove(false);
-    router.back();
+    goBack();
   };
 
   return (
