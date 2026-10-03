@@ -10,6 +10,7 @@ import { useFormat } from '@/i18n/useFormat';
 import { listRecurring } from '@/lib/db/repositories/recurring';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { moneyColors } from '@/theme';
+import { page } from '@/components/layout';
 
 export default function RecurringListScreen() {
   const theme = useTheme();
@@ -24,6 +25,7 @@ export default function RecurringListScreen() {
       <Stack.Screen options={{ title: t('recurring.title') }} />
       <FlatList
         data={rules}
+        contentContainerStyle={[page.list, styles.list]}
         keyExtractor={(r) => r.id}
         ListEmptyComponent={
           <Text style={styles.empty}>{t('recurring.empty')}</Text>
@@ -73,4 +75,5 @@ const styles = StyleSheet.create({
   icon: { marginLeft: 16, justifyContent: 'center' },
   amount: { alignSelf: 'center', fontVariant: ['tabular-nums'], fontWeight: '600' },
   paused: { opacity: 0.55 },
+  list: { paddingBottom: 32 },
 });

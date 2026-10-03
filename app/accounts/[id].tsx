@@ -14,6 +14,7 @@ import { getDb } from '@/lib/db/client';
 import { createAccount, deleteAccount, getAccount, updateAccount } from '@/lib/db/repositories/accounts';
 import { goBack } from '@/lib/nav';
 import { parseTaka, poishaToInput, ZERO } from '@/utils/money';
+import { page } from '@/components/layout';
 
 export default function AccountEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,7 +38,7 @@ export default function AccountEditScreen() {
   // Someone else's account shared with me: view only, with the option to leave.
   if (existing && existing.userId !== user.id) {
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[page.narrow, styles.container]}>
         <Stack.Screen options={{ title: t('sharing.sharedAccount') }} />
         <View style={styles.preview}>
           <IconBadge icon={existing.icon} color={existing.color} size={64} />
@@ -75,7 +76,7 @@ export default function AccountEditScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[page.narrow, styles.container]}>
       <Stack.Screen options={{ title: isNew ? t('account.new') : t('account.edit') }} />
       <View style={styles.preview}>
         <IconBadge icon={icon} color={color} size={64} />
@@ -116,7 +117,7 @@ export default function AccountEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  container: { padding: 16, gap: 12 },
   preview: { alignItems: 'center', marginVertical: 8, gap: 8 },
   missing: { padding: 24, textAlign: 'center' },
 });

@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
 import { useT } from '@/i18n/i18n';
@@ -14,9 +15,47 @@ const ROWS: KeypadKey[][] = [
   ['.', '0', 'back'],
 ];
 
-export function AmountKeypad({ onKey }: { onKey: (key: KeypadKey) => void }) {
+const KEYBOARD_KEYS: Record<string, KeypadKey> = {
+  ...Object.fromEntries([...'0123456789'].map((d) => [d, d as KeypadKey])),
+  '.': '.',
+  ',': '.',
+  Backspace: 'back',
+};
+
+/**
+ * On web, a physical keyboard types into the amount (digits, `.`, Backspace)
+ * and Enter submits, unless the focus is in a text field such as the note.
+ */
+function useHardwareKeys(onKey: (key: KeypadKey) => void, onSubmit?: () => void) {
+  const handlers = useRef({ onKey, onSubmit });
+  handlers.current = { onKey, onSubmit };
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const listener = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // Enter on a focused button presses that button instead.
+      if (e.key === 'Enter' && handlers.current.onSubmit && !target?.closest('button, a, [role="button"]')) {
+        e.preventDefault();
+        handlers.current.onSubmit();
+        return;
+      }
+      const key = KEYBOARD_KEYS[e.key];
+      if (key) {
+        e.preventDefault();
+        handlers.current.onKey(key);
+      }
+    };
+    document.addEventListener('keydown', listener);
+    return () => document.removeEventListener('keydown', listener);
+  }, []);
+}
+
+export function AmountKeypad({ onKey, onSubmit }: { onKey: (key: KeypadKey) => void; onSubmit?: () => void }) {
   const theme = useTheme();
   const { t, lang } = useT();
+  useHardwareKeys(onKey, onSubmit);
   return (
     <View style={styles.pad}>
       {ROWS.map((row) => (

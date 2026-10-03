@@ -12,6 +12,7 @@ import { getDb } from '@/lib/db/client';
 import { createCategory, deleteCategory, getCategory, updateCategory } from '@/lib/db/repositories/categories';
 import type { CategoryType } from '@/lib/db/schema';
 import { goBack } from '@/lib/nav';
+import { page } from '@/components/layout';
 
 export default function CategoryEditScreen() {
   const { id, type: typeParam } = useLocalSearchParams<{ id: string; type?: CategoryType }>();
@@ -49,7 +50,7 @@ export default function CategoryEditScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[page.narrow, styles.container]}>
       <Stack.Screen options={{ title: isNew ? t('category.new') : t('category.edit') }} />
       <View style={styles.preview}>
         <IconBadge icon={icon} color={color} size={64} />
@@ -91,7 +92,7 @@ export default function CategoryEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  container: { padding: 16, gap: 12 },
   preview: { alignItems: 'center', marginVertical: 8 },
   missing: { padding: 24, textAlign: 'center' },
 });

@@ -4,11 +4,13 @@ import { Pressable, StyleSheet } from 'react-native';
 import { Button, Dialog, HelperText, Portal, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { translateError, translate, useT, type StringKey } from '@/i18n/i18n';
+import { useFormat } from '@/i18n/useFormat';
 import { reauthenticate } from '@/lib/auth/auth';
 import { useSyncStore, type SyncStatus } from '@/lib/sync/store';
 import { syncNow } from '@/lib/sync/syncEngine';
 
 import type { IconName } from './IconBadge';
+import { useWindowClass } from './layout';
 
 function describe(status: SyncStatus, pending: number): { icon: IconName; label: string; warn: boolean } {
   const n = { count: pending };
@@ -38,6 +40,9 @@ export function SyncBadge() {
   void lang; // re-render on language change
   const { icon, label, warn } = describe(status, pending);
   const color = warn ? theme.colors.error : theme.colors.onSurfaceVariant;
+  // Narrow phones: keep the header title readable; the full label stays in accessibilityLabel.
+  const short = useWindowClass().width < 400;
+  const f = useFormat();
 
   return (
     <>
@@ -49,9 +54,17 @@ export function SyncBadge() {
         style={styles.badge}
       >
         <MaterialCommunityIcons name={icon} size={18} color={color} />
-        <Text variant="labelMedium" style={{ color }}>
-          {label}
-        </Text>
+        {short ? (
+          pending > 0 && (
+            <Text variant="labelMedium" style={{ color }}>
+              {f.num(pending)}
+            </Text>
+          )
+        ) : (
+          <Text variant="labelMedium" style={{ color }} numberOfLines={1}>
+            {label}
+          </Text>
+        )}
       </Pressable>
       <ReauthDialog visible={reauthOpen} onDismiss={() => setReauthOpen(false)} />
     </>

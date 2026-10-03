@@ -3,6 +3,7 @@ import { Text, useTheme } from 'react-native-paper';
 
 import { AddButtons } from '@/components/AddButtons';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
+import { page } from '@/components/layout';
 import { TransactionRow } from '@/components/TransactionRow';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { groupByDay, listTransactions } from '@/lib/db/repositories/transactions';
@@ -44,7 +45,7 @@ export default function TransactionsScreen() {
           </View>
         )}
         renderItem={({ item }) => <TransactionRow item={item} />}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[page.list, styles.list]}
       />
       <AddButtons />
     </View>
@@ -53,7 +54,7 @@ export default function TransactionsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { maxWidth: 640, width: '100%', alignSelf: 'center' },
+  list: { paddingBottom: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 },
   number: { fontVariant: ['tabular-nums'] },
   empty: { padding: 32, textAlign: 'center' },
