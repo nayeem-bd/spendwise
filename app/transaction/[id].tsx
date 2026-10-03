@@ -64,7 +64,7 @@ export default function TransactionScreen() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const categoryType = type === 'income' ? 'income' : 'expense';
-  const categories = useLocalQuery((db) => listCategories(db, categoryType), ['categories'], [categoryType]);
+  const categories = useLocalQuery((db) => listCategories(db, categoryType, user.id), ['categories'], [categoryType]);
   const accounts = useLocalQuery(listAccounts, ['accounts']);
   const savedPhotoIds = useLocalQuery(
     (db) => (isNew ? [] : listAttachments(db, params.id).map((a) => a.id)),

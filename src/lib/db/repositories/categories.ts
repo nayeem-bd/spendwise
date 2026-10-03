@@ -10,11 +10,23 @@ export type CategoryInput = { name: string; type: CategoryType; icon: string; co
 
 const notDeleted = isNull(categories.deletedAt);
 
-export function listCategories(db: LocalDb, type?: CategoryType): Category[] {
+/**
+ * Active categories, optionally of one type. Pass `ownerId` for pickers and
+ * management: with a shared wallet, co-members' categories are on this
+ * device too (to label their transactions) but aren't yours to use.
+ */
+export function listCategories(db: LocalDb, type?: CategoryType, ownerId?: string): Category[] {
   return db
     .select()
     .from(categories)
-    .where(and(notDeleted, eq(categories.archived, false), type ? eq(categories.type, type) : undefined))
+    .where(
+      and(
+        notDeleted,
+        eq(categories.archived, false),
+        type ? eq(categories.type, type) : undefined,
+        ownerId ? eq(categories.userId, ownerId) : undefined,
+      ),
+    )
     .orderBy(asc(categories.type), asc(categories.sortOrder), asc(categories.name))
     .all();
 }

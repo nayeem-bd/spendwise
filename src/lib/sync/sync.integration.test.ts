@@ -14,6 +14,9 @@ import { downloadAttachment, supabaseAttachmentStore, uploadPendingAttachments }
 import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type EntryInput } from '@/lib/db/repositories/transactions';
 import { seedDefaults } from '@/lib/db/seed';
 import type { LocalDb } from '@/lib/db/types';
+import { listAccountsWithBalance } from '@/lib/db/repositories/accounts';
+import { listMembers, purgeEndedMemberships } from '@/lib/db/repositories/sharing';
+import { syncState } from '@/lib/db/schema';
 import { createTestDb } from '@/test/testDb';
 import type { Poisha } from '@/utils/money';
 
@@ -146,6 +149,44 @@ describeIf('sync against local Supabase', () => {
     await expect(
       supabaseAttachmentStore(stranger.client).upload(`${user.userId}/evil.jpg`, new Uint8Array([1]), 'image/jpeg'),
     ).rejects.toThrow('Receipt upload failed');
+  });
+
+  it('shared wallet: invite, join, see each other, leave', async () => {
+    const ownerUser = await signUpUser();
+    const owner = await device(ownerUser);
+    const memberUser = await signUpUser();
+    const member = await device(memberUser);
+    const sharedCash = defaultRowId(ownerUser.userId, 'account', 'cash');
+
+    saveTransaction(owner.db, ownerUser.userId, expense(ownerUser.userId, { note: 'owner groceries', amount: 100000 as Poisha }));
+    await sync(owner);
+
+    const { data: code, error } = await owner.client.rpc('create_account_invite', { p_account: sharedCash });
+    if (error || !code) throw error ?? new Error('no code');
+    const joined = await member.client.rpc('join_account', { p_code: code });
+    expect(joined.error).toBeNull();
+
+    member.db.delete(syncState).run(); // what joinWithCode does: download the shared history
+    await sync(member);
+    expect(listTransactions(member.db).map((t) => t.note)).toEqual(['owner groceries']);
+    expect(listTransactions(member.db)[0]?.categoryName).toBe('Food & Groceries'); // owner's category label
+    expect(listMembers(member.db, sharedCash).map((m) => m.role)).toEqual(['owner', 'member']);
+
+    saveTransaction(member.db, memberUser.userId, {
+      ...expense(memberUser.userId, { note: 'member rickshaw', amount: 5000 as Poisha }),
+      accountId: sharedCash,
+    });
+    await sync(member);
+    await sync(owner);
+    expect(listTransactions(owner.db).map((t) => t.note).sort()).toEqual(['member rickshaw', 'owner groceries']);
+    expect(listAccountsWithBalance(owner.db).find((a) => a.id === sharedCash)?.balance).toBe(-105000);
+
+    expect((await member.client.rpc('leave_account', { p_account: sharedCash })).error).toBeNull();
+    await sync(member);
+    purgeEndedMemberships(member.db, memberUser.userId);
+    expect(listTransactions(member.db).map((t) => t.note)).toEqual(['member rickshaw']); // only their own
+    await sync(owner);
+    expect(listTransactions(owner.db).map((t) => t.note).sort()).toEqual(['member rickshaw', 'owner groceries']);
   });
 
   it('another user sees none of it', async () => {

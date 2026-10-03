@@ -23,7 +23,45 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "accounts": {
+            "account_invites": {
+                  Row: {
+                    "account_id": string,"code": string,"created_at": string,"created_by": string,"expires_at": string
+                  }
+                  Insert: {
+                    "account_id": string,"code": string,"created_at"?: string,"created_by": string,"expires_at": string
+                  }
+                  Update: {
+                    "account_id"?: string,"code"?: string,"created_at"?: string,"created_by"?: string,"expires_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "account_invites_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "accounts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"account_members": {
+                  Row: {
+                    "account_id": string,"created_at": string,"deleted_at": string | null,"email": string,"id": string,"role": string,"server_seq": number | null,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "account_id": string,"created_at"?: string,"deleted_at"?: string | null,"email": string,"id"?: string,"role": string,"server_seq"?: number | null,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "account_id"?: string,"created_at"?: string,"deleted_at"?: string | null,"email"?: string,"id"?: string,"role"?: string,"server_seq"?: number | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "account_members_account_id_fkey"
+      columns: ["account_id"]
+isOneToOne: false
+      referencedRelation: "accounts"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"accounts": {
                   Row: {
                     "archived": boolean,"color": string | null,"created_at": string,"deleted_at": string | null,"icon": string | null,"id": string,"initial_balance": number,"name": string,"server_seq": number | null,"updated_at": string,"user_id": string
                   }
@@ -156,11 +194,35 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "default_row_id":
+            "can_use_account":
+{ Args: { "p_account": string }; Returns: boolean
+                           },
+"create_account_invite":
+{ Args: { "p_account": string }; Returns: string
+                           },
+"default_row_id":
 { Args: { "p_key": string,"p_user_id": string }; Returns: string
+                           },
+"is_account_member":
+{ Args: { "p_account": string }; Returns: boolean
+                           },
+"join_account":
+{ Args: { "p_code": string }; Returns: string
+                           },
+"leave_account":
+{ Args: { "p_account": string }; Returns: undefined
+                           },
+"pull_changes":
+{ Args: { "p_limit": number,"p_since": number,"p_table": string }; Returns: Json
                            },
 "push_changes":
 { Args: { "changes": Json }; Returns: Json
+                           },
+"remove_account_member":
+{ Args: { "p_account": string,"p_user": string }; Returns: undefined
+                           },
+"shares_account_with":
+{ Args: { "p_user": string }; Returns: boolean
                            }
           }
           Enums: {
