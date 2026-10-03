@@ -3,12 +3,14 @@ import { countDistinct } from 'drizzle-orm';
 import { AppState } from 'react-native';
 
 import { onTablesChanged } from '@/lib/db/changes';
-import { getDb } from '@/lib/db/client';
+import { getDb, openDb } from '@/lib/db/client';
+import { getMeta } from '@/lib/db/meta';
 import { materializeRecurring } from '@/lib/db/repositories/recurring';
 import { outbox } from '@/lib/db/schema';
 import { supabase } from '@/lib/supabase';
 import { todayISO } from '@/utils/date';
 
+import { registerBackgroundSync, unregisterBackgroundSync } from './backgroundRegistration';
 import { pullAll } from './pull';
 import { pushAll } from './push';
 import { useSyncStore } from './store';
@@ -149,6 +151,7 @@ export function startSync(forUser: string): void {
   ];
   supabase.auth.startAutoRefresh();
   void syncNow();
+  void registerBackgroundSync();
 }
 
 function stopListeners() {
@@ -160,8 +163,35 @@ function stopListeners() {
 /** Stops syncing and waits for an in-flight sync, so sign-out can wipe safely. */
 export async function stopSync(): Promise<void> {
   userId = null;
+  void unregisterBackgroundSync();
   stopListeners();
   supabase.auth.stopAutoRefresh();
   await running?.catch(() => undefined);
   set({ status: 'idle', pending: 0, lastSyncedAt: null, error: null });
+}
+
+/**
+ * One sync for the OS background task (expo-background-task). If the app is
+ * running, this is a normal sync. If the OS started a fresh JS runtime just
+ * for the task, open the DB and sync as the user saved on this device.
+ * Returns false when the sync failed (so the OS can back off).
+ */
+export async function backgroundSync(): Promise<boolean> {
+  await openDb();
+  if (userId) {
+    await syncNow();
+  } else {
+    const raw = getMeta(getDb(), 'user');
+    if (!raw) return true; // signed out: nothing to do
+    const forUser = (JSON.parse(raw) as { id: string }).id;
+    userId = forUser;
+    try {
+      await runOnce(forUser);
+    } finally {
+      userId = null;
+      clearTimers(); // no retries in a headless run; the OS schedules the next one
+    }
+  }
+  const { status } = useSyncStore.getState();
+  return status !== 'error' && status !== 'offline';
 }
