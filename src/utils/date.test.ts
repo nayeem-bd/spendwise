@@ -1,4 +1,4 @@
-import { addDays, addMonths, formatDay, formatMonth, monthOf, monthRange, todayISO } from './date';
+import { addDays, addMonths, formatDay, formatMonth, monthOf, monthRange, nextOccurrence, todayISO } from './date';
 
 describe('dates', () => {
   it('todayISO uses the local calendar', () => {
@@ -46,5 +46,23 @@ describe('months', () => {
   it('formats and extracts', () => {
     expect(formatMonth('2026-10')).toBe('Oct 2026');
     expect(monthOf('2026-10-03')).toBe('2026-10');
+  });
+});
+
+describe('nextOccurrence', () => {
+  it.each([
+    ['2026-10-03', 'daily', 3, '2026-10-04'],
+    ['2026-12-31', 'daily', 31, '2027-01-01'],
+    ['2026-10-03', 'weekly', 3, '2026-10-10'],
+    ['2026-10-15', 'monthly', 15, '2026-11-15'],
+    ['2026-12-15', 'monthly', 15, '2027-01-15'],
+    ['2026-01-31', 'monthly', 31, '2026-02-28'],
+    ['2026-02-28', 'monthly', 31, '2026-03-31'],
+    ['2028-01-31', 'monthly', 31, '2028-02-29'],
+    ['2028-02-29', 'yearly', 29, '2029-02-28'],
+    ['2029-02-28', 'yearly', 29, '2030-02-28'],
+    ['2026-10-03', 'yearly', 3, '2027-10-03'],
+  ] as const)('after %s (%s, anchor %i) comes %s', (iso, frequency, anchor, expected) => {
+    expect(nextOccurrence(iso, frequency, anchor)).toBe(expected);
   });
 });

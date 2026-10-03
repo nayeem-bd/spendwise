@@ -34,9 +34,9 @@ export type TransactionListItem = Transaction & {
 };
 
 /** Validated fields as stored: transfers have no category, others no destination. */
-type ValidFields = Common & { type: Transaction['type']; categoryId: string | null; toAccountId: string | null };
+export type ValidFields = Common & { type: Transaction['type']; categoryId: string | null; toAccountId: string | null };
 
-function validate(input: TransactionInput): ValidFields {
+export function validateTransaction(input: TransactionInput): ValidFields {
   if (!Number.isSafeInteger(input.amount) || input.amount <= 0) throw new ValidationError('Enter an amount above ৳0');
   if (!input.accountId) throw new ValidationError(input.type === 'transfer' ? 'Pick the account to move from' : 'Pick an account');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.occurredOn)) throw new ValidationError('Invalid date');
@@ -59,7 +59,7 @@ function validate(input: TransactionInput): ValidFields {
 
 /** Creates a transaction, or updates it when `id` is given. */
 export function saveTransaction(db: LocalDb, userId: string, input: TransactionInput, id?: string): Transaction {
-  const valid = validate(input);
+  const valid = validateTransaction(input);
   if (id) return patchRow(db, transactions, id, valid);
   return upsertRow(db, transactions, { id: newId(), userId, ...valid, recurringId: null });
 }

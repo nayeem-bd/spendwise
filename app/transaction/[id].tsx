@@ -13,15 +13,24 @@ import { defaultRowId } from '@/lib/db/defaults';
 import { listAccounts } from '@/lib/db/repositories/accounts';
 import { budgetCrossings, budgetStatuses, type BudgetStatus } from '@/lib/db/repositories/budgets';
 import { listCategories } from '@/lib/db/repositories/categories';
-import { deleteTransaction, getTransaction, saveTransaction } from '@/lib/db/repositories/transactions';
+import { createRecurring, materializeRecurring } from '@/lib/db/repositories/recurring';
+import { deleteTransaction, getTransaction, saveTransaction, type TransactionInput } from '@/lib/db/repositories/transactions';
 import type { Account } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { showNotice } from '@/store/notice';
 import { moneyColors } from '@/theme';
-import { addDays, formatDay, monthOf, todayISO } from '@/utils/date';
+import { addDays, formatDay, monthOf, todayISO, type Frequency } from '@/utils/date';
 import { formatBDT, parseTaka, poishaToInput } from '@/utils/money';
 
 type TxType = 'expense' | 'income' | 'transfer';
+
+const REPEAT_OPTIONS: { value: Frequency | 'never'; label: string }[] = [
+  { value: 'never', label: 'Never' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'yearly', label: 'Yearly' },
+];
 
 const TITLES: Record<TxType, string> = { expense: 'Add expense', income: 'Add income', transfer: 'Add transfer' };
 
@@ -39,6 +48,7 @@ export default function TransactionScreen() {
   const [toAccountId, setToAccountId] = useState<string | null>(existing?.toAccountId ?? null);
   const [occurredOn, setOccurredOn] = useState(existing?.occurredOn ?? todayISO());
   const [note, setNote] = useState(existing?.note ?? '');
+  const [repeat, setRepeat] = useState<Frequency | 'never'>('never');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -69,15 +79,19 @@ export default function TransactionScreen() {
     const common = { amount, accountId: selectedAccountId ?? '', note, occurredOn };
     const month = monthOf(occurredOn);
     const before = budgetStatuses(getDb(), month);
+    const input: TransactionInput =
+      type === 'transfer'
+        ? { ...common, type, toAccountId: selectedToAccountId ?? '' }
+        : { ...common, type, categoryId: categoryId ?? '' };
     try {
-      saveTransaction(
-        getDb(),
-        user.id,
-        type === 'transfer'
-          ? { ...common, type, toAccountId: selectedToAccountId ?? '' }
-          : { ...common, type, categoryId: categoryId ?? '' },
-        isNew ? undefined : params.id,
-      );
+      if (isNew && repeat !== 'never') {
+        // The rule creates this occurrence (and later ones) with its own ids.
+        createRecurring(getDb(), user.id, input, repeat);
+        materializeRecurring(getDb(), todayISO());
+        if (occurredOn > todayISO()) showNotice(`Repeats ${repeat}, starting ${formatDay(occurredOn)}`);
+      } else {
+        saveTransaction(getDb(), user.id, input, isNew ? undefined : params.id);
+      }
       const crossed = budgetCrossings(before, budgetStatuses(getDb(), month));
       if (crossed.length) showNotice(crossed.map(describeBudgetAlert).join('\n'));
       router.back();
@@ -136,6 +150,25 @@ export default function TransactionScreen() {
       </View>
 
       <TextInput label="Note (optional)" mode="outlined" value={note} onChangeText={setNote} maxLength={200} />
+
+      {isNew ? (
+        <>
+          <Text variant="titleSmall">Repeat</Text>
+          <View style={styles.chips}>
+            {REPEAT_OPTIONS.map((o) => (
+              <Chip key={o.value} selected={repeat === o.value} showSelectedOverlay onPress={() => setRepeat(o.value)}>
+                {o.label}
+              </Chip>
+            ))}
+          </View>
+        </>
+      ) : (
+        existing?.recurringId && (
+          <Button icon="repeat" onPress={() => router.push({ pathname: '/recurring/[id]', params: { id: existing.recurringId! } })}>
+            Part of a repeating transaction
+          </Button>
+        )
+      )}
 
       <AmountKeypad onKey={(key) => setAmountText((t) => applyKey(t, key))} />
 

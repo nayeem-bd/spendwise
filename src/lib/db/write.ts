@@ -87,3 +87,25 @@ export function softDeleteRow<T extends SyncedTable>(db: LocalDb, table: T, id: 
   });
   notifyChanged(name, 'outbox');
 }
+
+/**
+ * Inserts a row with explicit timestamps only if no row with its id exists
+ * (deleted rows count as existing), and queues it for sync when inserted.
+ * Returns whether it was inserted. Used for generated rows (recurring
+ * occurrences) that several devices may create with the same id.
+ */
+export function insertRowIfAbsent<T extends SyncedTable>(
+  db: LocalDb,
+  table: T,
+  values: NewRowOf<T> & { createdAt: string; updatedAt: string },
+): boolean {
+  const name = tableNameOf(table);
+  const inserted = db.transaction((tx) => {
+    if (selectById(tx, table, values.id)) return false;
+    tx.insert(table as SyncedTable).values({ ...(values as NewRowOf<SyncedTable>), deletedAt: null }).run();
+    enqueue(tx, name, selectById(tx, table, values.id)!, 'upsert');
+    return true;
+  });
+  if (inserted) notifyChanged(name, 'outbox');
+  return inserted;
+}

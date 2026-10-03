@@ -4,8 +4,10 @@ import { AppState } from 'react-native';
 
 import { onTablesChanged } from '@/lib/db/changes';
 import { getDb } from '@/lib/db/client';
+import { materializeRecurring } from '@/lib/db/repositories/recurring';
 import { outbox } from '@/lib/db/schema';
 import { supabase } from '@/lib/supabase';
+import { todayISO } from '@/utils/date';
 
 import { pullAll } from './pull';
 import { pushAll } from './push';
@@ -44,7 +46,17 @@ function clearTimers() {
   retryTimer = debounceTimer = null;
 }
 
+/** Creates due recurring transactions. Local only, so it runs offline too. */
+function runRecurring() {
+  try {
+    materializeRecurring(getDb(), todayISO());
+  } catch (e) {
+    console.warn('Recurring transactions failed', e);
+  }
+}
+
 async function runOnce(forUser: string): Promise<void> {
+  runRecurring();
   const net = await NetInfo.fetch();
   if (net.isConnected === false) {
     set({ status: 'offline', error: null });
@@ -68,6 +80,7 @@ async function runOnce(forUser: string): Promise<void> {
     await pushAll(db, backend); // always push before pull
     if (userId !== forUser) return; // signed out meanwhile
     await pullAll(db, backend);
+    runRecurring(); // rules or next_run changes may have arrived from another device
     failures = 0;
     set({ status: 'idle', lastSyncedAt: Date.now(), error: null });
   } catch (e) {
