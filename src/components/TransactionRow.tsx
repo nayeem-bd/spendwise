@@ -5,6 +5,9 @@ import { List, Text, useTheme } from 'react-native-paper';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
 import { useFormat } from '@/i18n/useFormat';
+import { useAuthStore } from '@/lib/auth/store';
+import { getDb } from '@/lib/db/client';
+import { memberEmail } from '@/lib/db/repositories/sharing';
 import type { TransactionListItem } from '@/lib/db/repositories/transactions';
 import { moneyColors } from '@/theme';
 
@@ -18,6 +21,8 @@ export function TransactionRow({ item, showDate = false }: { item: TransactionLi
   const name = useDisplayName();
   const colors = moneyColors(theme.dark);
   const transfer = item.type === 'transfer';
+  const myId = useAuthStore((s) => s.user?.id);
+  const addedBy = myId && item.userId !== myId ? memberEmail(getDb(), item.userId) : undefined;
   const account = name(item.accountId, item.accountName) || '?';
   const toAccount = name(item.toAccountId, item.toAccountName) || '?';
   return (
@@ -28,6 +33,7 @@ export function TransactionRow({ item, showDate = false }: { item: TransactionLi
           showDate ? f.day(item.occurredOn) : null,
           transfer ? `${account} → ${toAccount}` : name(item.accountId, item.accountName),
           item.recurringId ? t('recurring.label') : null,
+          addedBy ? t('transaction.addedBy', { email: addedBy }) : null,
           item.note,
         ]
           .filter(Boolean)

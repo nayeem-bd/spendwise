@@ -8,6 +8,8 @@ import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
 import { useFormat } from '@/i18n/useFormat';
+import { useUser } from '@/lib/auth/store';
+import { sharingSummary } from '@/lib/db/repositories/sharing';
 import { addPoisha } from '@/utils/money';
 
 export default function AccountsScreen() {
@@ -15,7 +17,10 @@ export default function AccountsScreen() {
   const { t } = useT();
   const f = useFormat();
   const name = useDisplayName();
-  const total = addPoisha(...accounts.map((a) => a.balance));
+  const user = useUser();
+  const shared = useLocalQuery(sharingSummary, ['account_members']);
+  // Your money: accounts others shared with you count in their total, not yours.
+  const total = addPoisha(...accounts.filter((a) => a.userId === user.id).map((a) => a.balance));
 
   return (
     <View style={styles.container}>
@@ -32,6 +37,13 @@ export default function AccountsScreen() {
         renderItem={({ item }) => (
           <List.Item
             title={name(item.id, item.name)}
+            description={
+              item.userId !== user.id
+                ? t('sharing.sharedBy', { email: shared.get(item.id)?.ownerEmail ?? '' })
+                : shared.has(item.id)
+                  ? t('sharing.shared')
+                  : undefined
+            }
             left={() => <View style={styles.icon}><IconBadge icon={item.icon} color={item.color} /></View>}
             right={() => <Text style={styles.balance}>{f.money(item.balance)}</Text>}
             onPress={() => router.push({ pathname: '/accounts/[id]', params: { id: item.id } })}
