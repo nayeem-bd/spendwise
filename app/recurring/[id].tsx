@@ -1,4 +1,4 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, HelperText, SegmentedButtons, Switch, Text, TextInput } from 'react-native-paper';
@@ -12,6 +12,7 @@ import { getDb } from '@/lib/db/client';
 import { deleteRecurring, FREQUENCIES, getRecurring, updateRecurring } from '@/lib/db/repositories/recurring';
 import type { Frequency } from '@/utils/date';
 import { parseTaka, poishaToInput } from '@/utils/money';
+import { goBack } from '@/lib/nav';
 
 export default function RecurringEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,7 +42,7 @@ export default function RecurringEditScreen() {
     }
     try {
       updateRecurring(getDb(), id, { amount, note, frequency, active });
-      router.back();
+      goBack();
     } catch (e) {
       setError(translateError(e));
     }
@@ -50,7 +51,7 @@ export default function RecurringEditScreen() {
   const stop = () => {
     deleteRecurring(getDb(), id);
     setConfirmStop(false);
-    router.back();
+    goBack();
   };
 
   return (

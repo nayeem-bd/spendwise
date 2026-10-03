@@ -27,6 +27,7 @@ import { moneyColors } from '@/theme';
 import { addDays, monthOf, todayISO, type Frequency } from '@/utils/date';
 import { localDigits } from '@/utils/digits';
 import { parseTaka, poishaToInput } from '@/utils/money';
+import { goBack } from '@/lib/nav';
 
 type TxType = 'expense' | 'income' | 'transfer';
 
@@ -110,7 +111,7 @@ export default function TransactionScreen() {
       }
       const crossed = budgetCrossings(before, budgetStatuses(getDb(), month));
       if (crossed.length) showNotice(crossed.map(describeBudgetAlert).join('\n'));
-      router.back();
+      goBack();
     } catch (e) {
       setError(translateError(e));
     }
@@ -119,7 +120,7 @@ export default function TransactionScreen() {
   const remove = () => {
     deleteTransaction(getDb(), params.id);
     setConfirmDelete(false);
-    router.back();
+    goBack();
   };
 
   const describeBudgetAlert = (s: BudgetStatus) => {
