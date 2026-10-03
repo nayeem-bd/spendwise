@@ -50,6 +50,12 @@ export default function SettingsScreen() {
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => router.push('/accounts')}
         />
+        <List.Item
+          title="Repeating transactions"
+          left={(props) => <List.Icon {...props} icon="repeat" />}
+          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          onPress={() => router.push('/recurring')}
+        />
       </List.Section>
       <Divider />
       <List.Section>

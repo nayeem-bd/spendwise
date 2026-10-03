@@ -48,7 +48,11 @@ export default function TransactionsScreen() {
             <List.Item
               title={transfer ? 'Transfer' : (item.categoryName ?? 'Uncategorized')}
               description={
-                [transfer ? `${item.accountName ?? '?'} → ${item.toAccountName ?? '?'}` : item.accountName, item.note]
+                [
+                  transfer ? `${item.accountName ?? '?'} → ${item.toAccountName ?? '?'}` : item.accountName,
+                  item.recurringId ? 'Repeating' : null,
+                  item.note,
+                ]
                   .filter(Boolean)
                   .join(' · ') || undefined
               }
