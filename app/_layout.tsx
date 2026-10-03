@@ -10,6 +10,8 @@ import { PaperProvider } from 'react-native-paper';
 import { initAuth } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/auth/store';
 import { DatabaseGate } from '@/lib/db/DatabaseGate';
+import { initAppLock } from '@/lib/lock/lock';
+import { LockScreen } from '@/components/LockScreen';
 import { NoticeSnackbar } from '@/components/NoticeSnackbar';
 import { UpdateSnackbar } from '@/components/UpdateSnackbar';
 import { registerServiceWorker } from '@/lib/pwa';
@@ -30,6 +32,7 @@ export default function RootLayout() {
       <ThemeProvider value={navTheme(theme, dark)}>
         <DatabaseGate>
           <AppStack />
+          <LockScreen />
         </DatabaseGate>
         <StatusBar style={dark ? 'light' : 'dark'} />
         <UpdateSnackbar />
@@ -44,6 +47,7 @@ function AppStack() {
   const userId = useAuthStore((s) => s.user?.id);
   useEffect(() => {
     loadThemePreference();
+    initAppLock();
     initAuth();
   }, []);
   useEffect(() => {

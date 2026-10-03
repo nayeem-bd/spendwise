@@ -40,7 +40,13 @@
       "expo-secure-store",
       "expo-sharing",
       "expo-background-task",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "SpendWise uses Face ID to unlock the app when App lock is on."
+        }
+      ]
     ],
     "scheme": "spendwise",
     "experiments": {
