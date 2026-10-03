@@ -12,3 +12,54 @@ index 7fba380..eceb1ee 100644
      resultArray.set(resultBytes, 4);
      Atomics.store(lock, 0, RESOLVED);
    } else {
+diff --git a/node_modules/expo-sqlite/web/worker.ts b/node_modules/expo-sqlite/web/worker.ts
+index deaf721..cb47525 100644
+--- a/node_modules/expo-sqlite/web/worker.ts
++++ b/node_modules/expo-sqlite/web/worker.ts
+@@ -778,29 +778,32 @@ async function maybeInitAsync(): Promise<{
+   vfsMemory: MemoryVFS;
+ }> {
+   if (!_sqlite3) {
++    // Only publish _sqlite3 once the VFSs exist. If AccessHandlePoolVFS.create
++    // fails (OPFS file still locked by a closing page or another tab), the next
++    // call must retry the whole init instead of failing with 'Invalid VFS state'.
+     const module = await WaSQLiteFactory({
+       locateFile: () => wasmModule,
+     });
+-    _sqlite3 = SQLite.Factory(module) as SQLiteAPI;
+-    if (!_sqlite3) {
++    const sqlite3 = SQLite.Factory(module) as SQLiteAPI;
++    if (!sqlite3) {
+       throw new Error('Failed to initialize wa-sqlite');
+     }
+ 
+-    if (_vfs == null) {
+-      _vfs = await AccessHandlePoolVFS.create(VFS_NAME_PERSISTENT, module);
+-      if (_vfs == null) {
+-        throw new Error('Failed to initialize AccessHandlePoolVFS');
+-      }
++    const vfs = await AccessHandlePoolVFS.create(VFS_NAME_PERSISTENT, module);
++    if (vfs == null) {
++      throw new Error('Failed to initialize AccessHandlePoolVFS');
+     }
+-    _sqlite3.vfs_register(_vfs, true);
++    sqlite3.vfs_register(vfs, true);
+ 
+-    if (_vfsMemory == null) {
+-      _vfsMemory = await MemoryVFS.create(VFS_NAME_MEMORY, module);
+-      if (_vfsMemory == null) {
+-        throw new Error('Failed to initialize MemoryVFS');
+-      }
++    const vfsMemory = await MemoryVFS.create(VFS_NAME_MEMORY, module);
++    if (vfsMemory == null) {
++      throw new Error('Failed to initialize MemoryVFS');
+     }
+-    _sqlite3.vfs_register(_vfsMemory, false);
++    sqlite3.vfs_register(vfsMemory, false);
++
++    _vfs = vfs;
++    _vfsMemory = vfsMemory;
++    _sqlite3 = sqlite3;
+   }
+   if (_vfs == null || _vfsMemory == null) {
+     throw new Error('Invalid VFS state');
