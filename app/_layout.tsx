@@ -1,3 +1,6 @@
+// Defines the OS background sync task; must load before anything else.
+import '@/lib/sync/backgroundTask';
+
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
