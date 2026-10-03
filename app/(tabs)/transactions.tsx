@@ -1,10 +1,9 @@
-import { router } from 'expo-router';
 import { RefreshControl, SectionList, StyleSheet, View } from 'react-native';
-import { List, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 
 import { AddButtons } from '@/components/AddButtons';
-import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
+import { TransactionRow } from '@/components/TransactionRow';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { groupByDay, listTransactions } from '@/lib/db/repositories/transactions';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
@@ -42,45 +41,7 @@ export default function TransactionsScreen() {
             </Text>
           </View>
         )}
-        renderItem={({ item }) => {
-          const transfer = item.type === 'transfer';
-          return (
-            <List.Item
-              title={transfer ? 'Transfer' : (item.categoryName ?? 'Uncategorized')}
-              description={
-                [
-                  transfer ? `${item.accountName ?? '?'} → ${item.toAccountName ?? '?'}` : item.accountName,
-                  item.recurringId ? 'Repeating' : null,
-                  item.note,
-                ]
-                  .filter(Boolean)
-                  .join(' · ') || undefined
-              }
-              left={() => (
-                <View style={styles.icon}>
-                  {transfer ? (
-                    <IconBadge icon="swap-horizontal" color={theme.colors.outline} />
-                  ) : (
-                    <IconBadge icon={item.categoryIcon} color={item.categoryColor} />
-                  )}
-                </View>
-              )}
-              right={() => (
-                <Text
-                  style={[
-                    styles.number,
-                    styles.amount,
-                    { color: transfer ? theme.colors.onSurfaceVariant : item.type === 'income' ? colors.income : colors.expense },
-                  ]}
-                >
-                  {transfer ? '' : item.type === 'income' ? '+' : '−'}
-                  {formatBDT(item.amount)}
-                </Text>
-              )}
-              onPress={() => router.push({ pathname: '/transaction/[id]', params: { id: item.id } })}
-            />
-          );
-        }}
+        renderItem={({ item }) => <TransactionRow item={item} />}
         contentContainerStyle={styles.list}
       />
       <AddButtons />
@@ -92,8 +53,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { maxWidth: 640, width: '100%', alignSelf: 'center' },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 },
-  icon: { marginLeft: 16, justifyContent: 'center' },
   number: { fontVariant: ['tabular-nums'] },
-  amount: { alignSelf: 'center', fontWeight: '600' },
   empty: { padding: 32, textAlign: 'center' },
 });
