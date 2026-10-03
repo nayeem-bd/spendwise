@@ -7,8 +7,11 @@ import { PaperProvider } from 'react-native-paper';
 import { initAuth } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/auth/store';
 import { DatabaseGate } from '@/lib/db/DatabaseGate';
+import { registerServiceWorker } from '@/lib/pwa';
 import { startSync } from '@/lib/sync/syncEngine';
 import { darkTheme, lightTheme, navTheme } from '@/theme';
+
+registerServiceWorker();
 
 export default function RootLayout() {
   const dark = useColorScheme() === 'dark';
