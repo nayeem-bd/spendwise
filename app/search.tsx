@@ -1,13 +1,15 @@
 import { Stack } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
-import { Chip, Divider, Searchbar, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, Chip, Divider, Searchbar, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { TransactionRow } from '@/components/TransactionRow';
 import { listCategories } from '@/lib/db/repositories/categories';
 import { searchTransactions, totalsOf, type TransactionFilter } from '@/lib/db/repositories/transactions';
 import type { TransactionType } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
+import { exportTransactions } from '@/lib/export/exportTransactions';
+import { showNotice } from '@/store/notice';
 import { moneyColors } from '@/theme';
 import { addMonths, monthOf, monthRange, todayISO } from '@/utils/date';
 import { formatBDT, parseTaka } from '@/utils/money';
@@ -68,6 +70,17 @@ export default function SearchScreen() {
   );
   const results = useLocalQuery((db) => searchTransactions(db, filter), ['transactions', 'categories', 'accounts'], [filter]);
   const totals = totalsOf(results);
+  const [exporting, setExporting] = useState(false);
+  const exportResults = async () => {
+    setExporting(true);
+    try {
+      await exportTransactions(results);
+    } catch (e) {
+      showNotice(e instanceof Error ? e.message : String(e));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -111,11 +124,16 @@ export default function SearchScreen() {
               <TextInput style={styles.amount} dense mode="outlined" label="Max ৳" value={maxText} onChangeText={setMaxText} keyboardType="decimal-pad" />
             </View>
             <Divider />
-            <Text variant="labelLarge" style={styles.summary}>
-              {results.length} result{results.length === 1 ? '' : 's'}
-              {totals.expense > 0 && <Text style={{ color: colors.expense }}> · −{formatBDT(totals.expense)}</Text>}
-              {totals.income > 0 && <Text style={{ color: colors.income }}> · +{formatBDT(totals.income)}</Text>}
-            </Text>
+            <View style={styles.summaryRow}>
+              <Text variant="labelLarge" style={styles.summary}>
+                {results.length} result{results.length === 1 ? '' : 's'}
+                {totals.expense > 0 && <Text style={{ color: colors.expense }}> · −{formatBDT(totals.expense)}</Text>}
+                {totals.income > 0 && <Text style={{ color: colors.income }}> · +{formatBDT(totals.income)}</Text>}
+              </Text>
+              <Button icon="download" compact onPress={exportResults} loading={exporting} disabled={exporting || results.length === 0}>
+                CSV
+              </Button>
+            </View>
           </View>
         }
         ListEmptyComponent={<Text style={styles.empty}>No transactions match.</Text>}
@@ -140,6 +158,7 @@ const styles = StyleSheet.create({
   chips: { gap: 8 },
   amounts: { flexDirection: 'row', gap: 12 },
   amount: { flex: 1 },
-  summary: { paddingTop: 4 },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  summary: { flexShrink: 1 },
   empty: { padding: 24, textAlign: 'center' },
 });
