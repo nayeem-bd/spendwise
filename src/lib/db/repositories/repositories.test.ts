@@ -15,7 +15,7 @@ import {
   listAccountsWithBalance,
 } from './accounts';
 import { createCategory, deleteCategory, listCategories, updateCategory } from './categories';
-import { deleteTransaction, groupByDay, listTransactions, saveTransaction, type TransactionInput } from './transactions';
+import { deleteTransaction, groupByDay, listTransactions, saveTransaction, type EntryInput } from './transactions';
 import { ValidationError } from './validate';
 
 const USER = '11111111-1111-1111-1111-111111111111';
@@ -33,7 +33,7 @@ const bkash = () => defaultRowId(USER, 'account', 'bkash');
 const food = () => defaultRowId(USER, 'category', 'food');
 const salary = () => defaultRowId(USER, 'category', 'salary');
 
-const expense = (overrides: Partial<TransactionInput> = {}): TransactionInput => ({
+const expense = (overrides: Partial<EntryInput> = {}): EntryInput => ({
   type: 'expense',
   amount: p(25050),
   categoryId: food(),
@@ -186,5 +186,40 @@ describe('listTransactions by month and groupByDay', () => {
       ['2026-10-03', 2, 4000],
       ['2026-10-01', 1, -300],
     ]);
+  });
+});
+
+describe('transfers', () => {
+  const transfer = (amount: number, from = cash(), to = bkash()) =>
+    saveTransaction(db, USER, { type: 'transfer', amount: p(amount), accountId: from, toAccountId: to, note: null, occurredOn: '2026-10-03' });
+
+  it('moves money between accounts without changing the total', () => {
+    saveTransaction(db, USER, { ...expense({ amount: p(100000) }), type: 'income', categoryId: salary() });
+    transfer(30000);
+    const balances = Object.fromEntries(listAccountsWithBalance(db).map((a) => [a.name, a.balance]));
+    expect(balances).toEqual({ Bank: 0, Cash: 70000, bKash: 30000 });
+  });
+
+  it('is stored without a category and lists both account names', () => {
+    const t = transfer(500);
+    expect(t.categoryId).toBeNull();
+    expect(t.toAccountId).toBe(bkash());
+    expect(listTransactions(db)[0]).toMatchObject({ type: 'transfer', accountName: 'Cash', toAccountName: 'bKash', categoryName: null });
+  });
+
+  it('does not count as income or expense', () => {
+    transfer(500);
+    expect(groupByDay(listTransactions(db))[0]?.net).toBe(0);
+  });
+
+  it('needs two different accounts', () => {
+    expect(() => transfer(500, cash(), cash())).toThrow('Pick two different accounts');
+    expect(() => transfer(500, cash(), '')).toThrow('Pick the account to move to');
+  });
+
+  it('an expense can be edited into a transfer and loses its category', () => {
+    const t = saveTransaction(db, USER, expense());
+    const edited = saveTransaction(db, USER, { type: 'transfer', amount: p(100), accountId: cash(), toAccountId: bkash(), note: null, occurredOn: '2026-10-03' }, t.id);
+    expect(edited).toMatchObject({ type: 'transfer', categoryId: null, toAccountId: bkash() });
   });
 });

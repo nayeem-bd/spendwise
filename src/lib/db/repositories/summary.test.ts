@@ -6,7 +6,7 @@ import { seedDefaults } from '../seed';
 import type { LocalDb } from '../types';
 import { deleteCategory } from './categories';
 import { expenseByCategory, monthTotals } from './summary';
-import { deleteTransaction, saveTransaction, type TransactionInput } from './transactions';
+import { deleteTransaction, saveTransaction, type EntryInput } from './transactions';
 
 const USER = '11111111-1111-1111-1111-111111111111';
 const food = defaultRowId(USER, 'category', 'food');
@@ -22,7 +22,7 @@ const add = (type: 'expense' | 'income', amount: number, categoryId: string, occ
     accountId: defaultRowId(USER, 'account', 'cash'),
     note: null,
     occurredOn,
-  } satisfies TransactionInput);
+  } satisfies EntryInput);
 
 beforeEach(() => {
   db = createTestDb();
@@ -54,4 +54,17 @@ it('expenseByCategory sorts biggest first', () => {
 it('deleted categories keep their name in the breakdown', () => {
   deleteCategory(db, transport);
   expect(expenseByCategory(db, '2026-10').map((c) => c.name)).toContain('Transport');
+});
+
+it('transfers are left out of monthly totals and the category breakdown', () => {
+  saveTransaction(db, USER, {
+    type: 'transfer',
+    amount: 123456 as Poisha,
+    accountId: defaultRowId(USER, 'account', 'cash'),
+    toAccountId: defaultRowId(USER, 'account', 'bank'),
+    note: null,
+    occurredOn: '2026-10-10',
+  });
+  expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, balance: 5000000 - 60050 });
+  expect(expenseByCategory(db, '2026-10')).toHaveLength(2);
 });

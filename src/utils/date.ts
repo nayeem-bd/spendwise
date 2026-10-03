@@ -52,3 +52,33 @@ export function formatMonth(month: string): string {
   const [y, m] = month.split('-').map(Number);
   return `${MONTHS[m! - 1]} ${y}`;
 }
+
+// ---- Recurrence ----
+
+export type Frequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+const daysInMonth = (year: number, month1: number) => new Date(Date.UTC(year, month1, 0)).getUTCDate();
+
+/**
+ * The occurrence after `iso`. Monthly and yearly keep the original day of
+ * month (`anchorDay`), clamped to short months: an anchor of 31 gives
+ * Jan 31 → Feb 28 → Mar 31, never drifting to the 28th.
+ */
+export function nextOccurrence(iso: string, frequency: Frequency, anchorDay: number): string {
+  if (frequency === 'daily') return addDays(iso, 1);
+  if (frequency === 'weekly') return addDays(iso, 7);
+  const [y, m] = iso.split('-').map(Number);
+  let year = y!;
+  let month = m!;
+  if (frequency === 'monthly') {
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  } else {
+    year += 1;
+  }
+  const day = Math.min(anchorDay, daysInMonth(year, month));
+  return `${year}-${pad(month)}-${pad(day)}`;
+}

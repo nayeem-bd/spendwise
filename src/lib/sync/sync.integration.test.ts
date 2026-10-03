@@ -5,7 +5,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import { defaultRowId } from '@/lib/db/defaults';
 import { listCategories } from '@/lib/db/repositories/categories';
-import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type TransactionInput } from '@/lib/db/repositories/transactions';
+import { createRecurring, getRecurring, materializeRecurring } from '@/lib/db/repositories/recurring';
+import { budgetStatuses, setBudget } from '@/lib/db/repositories/budgets';
+import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type EntryInput } from '@/lib/db/repositories/transactions';
 import { seedDefaults } from '@/lib/db/seed';
 import type { LocalDb } from '@/lib/db/types';
 import { createTestDb } from '@/test/testDb';
@@ -45,7 +47,7 @@ const sync = async (d: Device) => {
   await pullAll(d.db, d.backend);
 };
 
-const expense = (userId: string, overrides: Partial<TransactionInput> = {}): TransactionInput => ({
+const expense = (userId: string, overrides: Partial<EntryInput> = {}): EntryInput => ({
   type: 'expense',
   amount: 25050 as Poisha,
   categoryId: defaultRowId(userId, 'category', 'food'),
@@ -97,6 +99,29 @@ describeIf('sync against local Supabase', () => {
     await sync(phoneA);
     await sync(phoneB);
     expect(getTransaction(phoneB.db, id)?.deletedAt).not.toBeNull();
+  });
+
+  it('recurring rules (JSON template), their occurrences and budgets round-trip', async () => {
+    const rule = createRecurring(
+      phoneA.db,
+      user.userId,
+      expense(user.userId, { amount: 2500050 as Poisha, note: 'Rent', occurredOn: '2026-08-31' }),
+      'monthly',
+    );
+    materializeRecurring(phoneA.db, '2026-10-05');
+    setBudget(phoneA.db, user.userId, { categoryId: null, month: '2026-10', amount: 9000000 as Poisha });
+    await sync(phoneA);
+    await sync(phoneB);
+
+    expect(getRecurring(phoneB.db, rule.id)).toMatchObject({
+      nextRun: '2026-10-31',
+      template: { amount: 2500050, note: 'Rent', anchorDay: 31 },
+    });
+    expect(listTransactions(phoneB.db).filter((t) => t.recurringId === rule.id).map((t) => t.occurredOn)).toEqual([
+      '2026-09-30',
+      '2026-08-31',
+    ]);
+    expect(budgetStatuses(phoneB.db, '2026-10').total?.amount).toBe(9000000);
   });
 
   it('another user sees none of it', async () => {

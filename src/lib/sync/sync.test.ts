@@ -1,6 +1,6 @@
 import { defaultRowId } from '@/lib/db/defaults';
 import { createCategory } from '@/lib/db/repositories/categories';
-import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type TransactionInput } from '@/lib/db/repositories/transactions';
+import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type EntryInput } from '@/lib/db/repositories/transactions';
 import { outbox } from '@/lib/db/schema';
 import { seedDefaults } from '@/lib/db/seed';
 import type { LocalDb } from '@/lib/db/types';
@@ -30,7 +30,7 @@ const sync = async (db: LocalDb) => {
   await pushAll(db, server.backend());
   await pullAll(db, server.backend());
 };
-const expense = (overrides: Partial<TransactionInput> = {}): TransactionInput => ({
+const expense = (overrides: Partial<EntryInput> = {}): EntryInput => ({
   type: 'expense',
   amount: p(10000),
   categoryId: defaultRowId(USER, 'category', 'food'),
