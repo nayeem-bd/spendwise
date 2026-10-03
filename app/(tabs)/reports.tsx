@@ -1,8 +1,9 @@
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Divider, List, Text, useTheme } from 'react-native-paper';
+import { Divider, List, Surface, Text, useTheme } from 'react-native-paper';
 
 import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
+import { page, useWindowClass } from '@/components/layout';
 import { TrendChart } from '@/components/TrendChart';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { categoryComparison, monthlyTrend } from '@/lib/db/repositories/summary';
@@ -26,16 +27,19 @@ export default function ReportsScreen() {
   const comparison = useLocalQuery((db) => categoryComparison(db, month), ['transactions', 'categories'], [month]);
   const { refreshing, onRefresh } = useSyncRefresh();
   const previous = f.month(addMonths(month, -1));
+  const { expanded } = useWindowClass();
 
-  return (
-    <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-      <MonthSwitcher />
+  const trendSection = (
+    <>
       <List.Subheader>{t('reports.last6')}</List.Subheader>
       <View style={styles.chart}>
         <TrendChart data={trend} selected={month} />
       </View>
+    </>
+  );
 
-      <Divider style={styles.divider} />
+  const comparisonSection = (
+    <>
       <List.Subheader>{t('reports.vs', { month: previous })}</List.Subheader>
       {comparison.length === 0 && <Text style={styles.empty}>{t('reports.empty')}</Text>}
       {comparison.map((c) => {
@@ -62,12 +66,38 @@ export default function ReportsScreen() {
           />
         );
       })}
+    </>
+  );
+
+  return (
+    <ScrollView
+      contentContainerStyle={[expanded ? page.wide : page.list, styles.content]}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
+      <MonthSwitcher />
+      {expanded ? (
+        <View style={page.columns}>
+          <Surface style={[page.column, styles.card]} elevation={1}>
+            {trendSection}
+          </Surface>
+          <Surface style={[page.column, styles.card]} elevation={1}>
+            {comparisonSection}
+          </Surface>
+        </View>
+      ) : (
+        <>
+          {trendSection}
+          <Divider style={styles.divider} />
+          {comparisonSection}
+        </>
+      )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: 32, maxWidth: 640, width: '100%', alignSelf: 'center' },
+  content: { paddingBottom: 32 },
+  card: { borderRadius: 16, paddingBottom: 12, overflow: 'hidden' },
   chart: { paddingHorizontal: 16 },
   divider: { marginTop: 16 },
   empty: { paddingHorizontal: 16 },

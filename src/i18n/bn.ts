@@ -35,6 +35,7 @@ export const bn: Record<StringKey, string> = {
   'home.spent': 'খরচ হয়েছে',
   'home.balance': 'ব্যালান্স',
   'home.empty': 'এই মাসে এখনো কোনো খরচ নেই।',
+  'home.byCategory': 'ক্যাটাগরি অনুযায়ী খরচ',
 
   'month.previous': 'আগের মাস',
   'month.next': 'পরের মাস',

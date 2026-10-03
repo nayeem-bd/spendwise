@@ -6,6 +6,7 @@ import { IconButton } from 'react-native-paper';
 import type { IconName } from '@/components/IconBadge';
 import { useT } from '@/i18n/i18n';
 import { SyncBadge } from '@/components/SyncBadge';
+import { useWindowClass } from '@/components/layout';
 
 const icon =
   (name: IconName) =>
@@ -13,8 +14,17 @@ const icon =
 
 export default function TabsLayout() {
   const { t } = useT();
+  const { compact, expanded } = useWindowClass();
   return (
-    <Tabs screenOptions={{ headerRight: () => <SyncBadge /> }}>
+    <Tabs
+      screenOptions={{
+        headerRight: () => <SyncBadge />,
+        // Phones: bottom bar. Tablets: navigation rail. Desktop: sidebar with labels.
+        tabBarPosition: compact ? 'bottom' : 'left',
+        tabBarVariant: compact ? 'uikit' : 'material',
+        tabBarLabelPosition: compact ? 'below-icon' : expanded ? 'beside-icon' : 'below-icon',
+      }}
+    >
       <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: icon('chart-pie') }} />
       <Tabs.Screen
         name="transactions"

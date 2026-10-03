@@ -16,6 +16,7 @@ import { showNotice } from '@/store/notice';
 import { moneyColors } from '@/theme';
 import { addMonths, monthOf, monthRange, todayISO } from '@/utils/date';
 import { parseTaka } from '@/utils/money';
+import { page } from '@/components/layout';
 
 type Period = 'all' | 'month' | '3months' | 'year';
 
@@ -95,7 +96,7 @@ export default function SearchScreen() {
         data={results}
         keyExtractor={(t) => t.id}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[page.list, styles.list]}
         ListHeaderComponent={
           <View style={styles.filters}>
             <Searchbar placeholder={t('search.placeholder')} value={text} onChangeText={setText} autoFocus />
@@ -159,7 +160,7 @@ function ChipRow({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  list: { maxWidth: 640, width: '100%', alignSelf: 'center', paddingBottom: 32 },
+  list: { paddingBottom: 32 },
   filters: { padding: 16, gap: 10 },
   chips: { gap: 8 },
   amounts: { flexDirection: 'row', gap: 12 },

@@ -13,6 +13,7 @@ import { deleteRecurring, FREQUENCIES, getRecurring, updateRecurring } from '@/l
 import type { Frequency } from '@/utils/date';
 import { parseTaka, poishaToInput } from '@/utils/money';
 import { goBack } from '@/lib/nav';
+import { page } from '@/components/layout';
 
 export default function RecurringEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -55,7 +56,7 @@ export default function RecurringEditScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[page.narrow, styles.container]} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: t('recurring.titleOne') }} />
       <Text variant="titleMedium">{what}</Text>
       <Text variant="bodyMedium">
@@ -93,7 +94,7 @@ export default function RecurringEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  container: { padding: 16, gap: 12 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   missing: { padding: 24, textAlign: 'center' },
 });

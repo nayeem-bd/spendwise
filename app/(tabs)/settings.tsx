@@ -11,6 +11,7 @@ import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { listTransactions } from '@/lib/db/repositories/transactions';
 import { exportTransactions } from '@/lib/export/exportTransactions';
+import { page } from '@/components/layout';
 import { canUseAppLock, setAppLock, useLockStore } from '@/lib/lock/lock';
 import { REMINDER_TIMES, remindersSupported, setReminder, useReminderStore } from '@/lib/reminder/reminder';
 import { syncNow } from '@/lib/sync/syncEngine';
@@ -79,7 +80,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView>
+    <ScrollView contentContainerStyle={[page.list, styles.content]}>
       <List.Section>
         <List.Subheader>{t('settings.manage')}</List.Subheader>
         <List.Item
@@ -209,6 +210,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  content: { paddingBottom: 32 },
   segment: { marginHorizontal: 16 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
 });

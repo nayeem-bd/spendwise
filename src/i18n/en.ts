@@ -40,6 +40,7 @@ export const en = {
   'home.spent': 'Spent',
   'home.balance': 'Balance',
   'home.empty': 'No spending this month yet.',
+  'home.byCategory': 'Spending by category',
 
   // Month switcher
   'month.previous': 'Previous month',

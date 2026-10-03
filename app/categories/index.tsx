@@ -10,6 +10,7 @@ import { useDisplayName } from '@/i18n/names';
 import { listCategories } from '@/lib/db/repositories/categories';
 import type { CategoryType } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
+import { page } from '@/components/layout';
 
 export default function CategoriesScreen() {
   const [type, setType] = useState<CategoryType>('expense');
@@ -40,7 +41,7 @@ export default function CategoriesScreen() {
             onPress={() => router.push({ pathname: '/categories/[id]', params: { id: item.id } })}
           />
         )}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[page.list, styles.list]}
       />
       <FAB
         icon="plus"

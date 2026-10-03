@@ -19,6 +19,7 @@ export function TrendChart({ data, selected }: { data: MonthPoint[]; selected: s
   const { t } = useT();
   const f = useFormat();
   const colors = moneyColors(theme.dark);
+  const font = theme.fonts.labelSmall.fontFamily; // SVG text defaults to serif on web
   const [width, setWidth] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
 
@@ -33,7 +34,7 @@ export function TrendChart({ data, selected }: { data: MonthPoint[]; selected: s
       {width > 0 && (
         <Svg width={width} height={HEIGHT}>
           <Line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke={theme.colors.outlineVariant} strokeWidth={1} />
-          <SvgText x={2} y={TOP_PAD - 4} fontSize={10} fill={theme.colors.onSurfaceVariant}>
+          <SvgText x={2} y={TOP_PAD - 4} fontSize={10} fontFamily={font} fill={theme.colors.onSurfaceVariant}>
             {f.compact(max as Poisha)}
           </SvgText>
           {data.map((d, i) => {
@@ -47,6 +48,7 @@ export function TrendChart({ data, selected }: { data: MonthPoint[]; selected: s
                 x={cx}
                 y={HEIGHT - 4}
                 fontSize={11}
+                fontFamily={font}
                 fontWeight={isSelected ? 'bold' : 'normal'}
                 textAnchor="middle"
                 fill={theme.colors.onSurface}

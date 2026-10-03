@@ -14,6 +14,7 @@ import { useDisplayName } from '@/i18n/names';
 import { useFormat } from '@/i18n/useFormat';
 import { parseTaka, poishaToInput } from '@/utils/money';
 import { goBack } from '@/lib/nav';
+import { page } from '@/components/layout';
 
 /** params.category: 'total' (whole month), 'new' (pick a category) or a category id. */
 export default function BudgetEditScreen() {
@@ -72,7 +73,7 @@ export default function BudgetEditScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[page.narrow, styles.container]} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title }} />
       <Text variant="bodyMedium">
         {t('budget.fromOnwards', { month: f.month(month) })}
@@ -117,5 +118,5 @@ export default function BudgetEditScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  container: { padding: 16, gap: 12 },
 });

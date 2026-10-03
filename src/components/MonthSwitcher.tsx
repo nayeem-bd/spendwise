@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native';
-import { Button, IconButton } from 'react-native-paper';
+import { Button, IconButton, useTheme } from 'react-native-paper';
 
 import { useT } from '@/i18n/i18n';
 import { useFormat } from '@/i18n/useFormat';
@@ -12,12 +12,14 @@ export function MonthSwitcher() {
   const { t } = useT();
   const f = useFormat();
   const isCurrent = month === monthOf(todayISO());
+  const theme = useTheme();
   return (
     <View style={styles.row}>
       <IconButton icon="chevron-left" accessibilityLabel={t('month.previous')} onPress={() => shift(-1)} />
       <Button
-        onPress={reset}
-        disabled={isCurrent}
+        onPress={isCurrent ? undefined : reset}
+        // Not `disabled`: that greys out the label. Tapping the current month does nothing.
+        textColor={isCurrent ? theme.colors.onSurface : theme.colors.primary}
         labelStyle={styles.label}
         accessibilityHint={isCurrent ? undefined : t('month.goToCurrent')}
       >
