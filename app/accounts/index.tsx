@@ -5,35 +5,41 @@ import { FAB, List, Text } from 'react-native-paper';
 import { IconBadge } from '@/components/IconBadge';
 import { listAccountsWithBalance } from '@/lib/db/repositories/accounts';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
-import { addPoisha, formatBDT } from '@/utils/money';
+import { useT } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
+import { useFormat } from '@/i18n/useFormat';
+import { addPoisha } from '@/utils/money';
 
 export default function AccountsScreen() {
   const accounts = useLocalQuery(listAccountsWithBalance, ['accounts', 'transactions']);
+  const { t } = useT();
+  const f = useFormat();
+  const name = useDisplayName();
   const total = addPoisha(...accounts.map((a) => a.balance));
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Accounts' }} />
+      <Stack.Screen options={{ title: t('settings.accounts') }} />
       <FlatList
         data={accounts}
         keyExtractor={(a) => a.id}
         ListHeaderComponent={
           <View style={styles.total}>
-            <Text variant="labelLarge">Total balance</Text>
-            <Text variant="headlineSmall">{formatBDT(total)}</Text>
+            <Text variant="labelLarge">{t('account.totalBalance')}</Text>
+            <Text variant="headlineSmall">{f.money(total)}</Text>
           </View>
         }
         renderItem={({ item }) => (
           <List.Item
-            title={item.name}
+            title={name(item.id, item.name)}
             left={() => <View style={styles.icon}><IconBadge icon={item.icon} color={item.color} /></View>}
-            right={() => <Text style={styles.balance}>{formatBDT(item.balance)}</Text>}
+            right={() => <Text style={styles.balance}>{f.money(item.balance)}</Text>}
             onPress={() => router.push({ pathname: '/accounts/[id]', params: { id: item.id } })}
           />
         )}
         contentContainerStyle={styles.list}
       />
-      <FAB icon="plus" label="New account" style={styles.fab} onPress={() => router.push({ pathname: '/accounts/[id]', params: { id: 'new' } })} />
+      <FAB icon="plus" label={t('account.new')} style={styles.fab} onPress={() => router.push({ pathname: '/accounts/[id]', params: { id: 'new' } })} />
     </View>
   );
 }

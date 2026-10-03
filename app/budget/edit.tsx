@@ -1,4 +1,4 @@
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
@@ -9,13 +9,19 @@ import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { budgetStatuses, getBudget, removeBudget, setBudget } from '@/lib/db/repositories/budgets';
 import { getCategory, listCategories } from '@/lib/db/repositories/categories';
-import { formatMonth } from '@/utils/date';
+import { translate, translateError, useT } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
+import { useFormat } from '@/i18n/useFormat';
 import { parseTaka, poishaToInput } from '@/utils/money';
+import { goBack } from '@/lib/nav';
 
 /** params.category: 'total' (whole month), 'new' (pick a category) or a category id. */
 export default function BudgetEditScreen() {
   const params = useLocalSearchParams<{ month: string; category: string }>();
   const user = useUser();
+  const { t } = useT();
+  const f = useFormat();
+  const name = useDisplayName();
   const month = params.month;
   const isNew = params.category === 'new';
 
@@ -35,70 +41,74 @@ export default function BudgetEditScreen() {
   });
 
   const title =
-    params.category === 'total' ? 'Monthly budget' : isNew ? 'New category budget' : `${getCategory(getDb(), params.category)?.name ?? 'Category'} budget`;
+    params.category === 'total'
+      ? t('budget.monthly')
+      : isNew
+        ? t('budget.newCategory')
+        : t('budget.categoryTitle', { name: name(params.category, getCategory(getDb(), params.category)?.name) || t('transaction.category') });
 
   const save = () => {
     const amount = parseTaka(amountText);
     if (amount === null || amount <= 0) {
-      setError('Enter a budget above ৳0');
+      setError(translate('error.Enter a budget above ৳0'));
       return;
     }
     if (isNew && !categoryId) {
-      setError('Pick a category');
+      setError(translate('error.Pick a category'));
       return;
     }
     try {
       setBudget(getDb(), user.id, { categoryId, month, amount });
-      router.back();
+      goBack();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(translateError(e));
     }
   };
 
   const remove = () => {
     removeBudget(getDb(), user.id, categoryId, month);
     setConfirmRemove(false);
-    router.back();
+    goBack();
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title }} />
       <Text variant="bodyMedium">
-        From {formatMonth(month)} onwards. Later months keep this budget until you change it.
+        {t('budget.fromOnwards', { month: f.month(month) })}
       </Text>
       {isNew &&
         (available.length ? (
           <>
-            <Text variant="titleSmall">Category</Text>
+            <Text variant="titleSmall">{t('transaction.category')}</Text>
             <CategoryGrid categories={available} value={categoryId} onChange={setCategoryId} />
           </>
         ) : (
-          <Text>Every expense category already has a budget this month.</Text>
+          <Text>{t('budget.allTaken')}</Text>
         ))}
       <TextInput
-        label="Budget (৳)"
+        label={t('budget.amount')}
         mode="outlined"
         value={amountText}
         onChangeText={setAmountText}
         keyboardType="decimal-pad"
-        placeholder="e.g. 15000"
+        placeholder={t('budget.placeholder')}
         autoFocus={!isNew}
       />
       {error && <HelperText type="error">{error}</HelperText>}
       <Button mode="contained" onPress={save}>
-        Save
+        {t('common.save')}
       </Button>
       {existing && (
         <Button textColor="#C62828" onPress={() => setConfirmRemove(true)}>
-          Remove budget
+          {t('budget.remove')}
         </Button>
       )}
       <ConfirmDialog
         visible={confirmRemove}
-        title="Remove budget?"
-        message={`No budget from ${formatMonth(month)} onwards. Earlier months keep theirs.`}
-        confirmLabel="Remove"
+        title={t('budget.removeTitle')}
+        message={t('budget.removeMessage', { month: f.month(month) })}
+        confirmLabel={t('budget.removeConfirm')}
         onConfirm={remove}
         onDismiss={() => setConfirmRemove(false)}
       />

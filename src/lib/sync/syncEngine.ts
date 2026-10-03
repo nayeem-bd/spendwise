@@ -10,6 +10,7 @@ import { outbox } from '@/lib/db/schema';
 import { supabase } from '@/lib/supabase';
 import { todayISO } from '@/utils/date';
 
+import { downloadAttachment, supabaseAttachmentStore, uploadPendingAttachments } from './attachments';
 import { registerBackgroundSync, unregisterBackgroundSync } from './backgroundRegistration';
 import { pullAll } from './pull';
 import { pushAll } from './push';
@@ -35,6 +36,7 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let teardown: (() => void)[] = [];
 
 const backend = supabaseBackend(supabase);
+const attachmentStore = supabaseAttachmentStore(supabase);
 const set = useSyncStore.setState;
 
 function refreshPending() {
@@ -79,6 +81,7 @@ async function runOnce(forUser: string): Promise<void> {
   if (status !== 'offline' && status !== 'error') set({ status: 'syncing', error: null });
   const db = getDb();
   try {
+    await uploadPendingAttachments(db, attachmentStore); // receipt files before their rows
     await pushAll(db, backend); // always push before pull
     if (userId !== forUser) return; // signed out meanwhile
     await pullAll(db, backend);
@@ -194,4 +197,9 @@ export async function backgroundSync(): Promise<boolean> {
   }
   const { status } = useSyncStore.getState();
   return status !== 'error' && status !== 'offline';
+}
+
+/** Downloads a receipt photo taken on another device (needs internet once; cached afterwards). */
+export function fetchAttachment(id: string): Promise<string | undefined> {
+  return downloadAttachment(getDb(), attachmentStore, id);
 }

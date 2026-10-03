@@ -9,6 +9,7 @@ import { newId } from '../id';
 import { accounts, categories, transactions, type Transaction } from '../schema';
 import type { LocalDb } from '../types';
 import { patchRow, softDeleteRow, upsertRow } from '../write';
+import { deleteAttachmentsOf } from './attachments';
 import { ValidationError } from './validate';
 
 type Common = {
@@ -66,6 +67,7 @@ export function saveTransaction(db: LocalDb, userId: string, input: TransactionI
 
 export function deleteTransaction(db: LocalDb, id: string): void {
   softDeleteRow(db, transactions, id);
+  deleteAttachmentsOf(db, id);
 }
 
 export function getTransaction(db: LocalDb, id: string): Transaction | undefined {

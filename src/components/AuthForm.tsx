@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 
+import { translateError, useT } from '@/i18n/i18n';
+
 type Props = {
   title: string;
   submitLabel: string;
@@ -12,6 +14,7 @@ type Props = {
 
 /** Email + password form shared by login and signup. onSubmit may return an info message. */
 export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
+  const { t } = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -26,7 +29,7 @@ export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
       const message = await onSubmit(email, password);
       if (message) setInfo(message);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(translateError(e));
     } finally {
       setBusy(false);
     }
@@ -39,7 +42,7 @@ export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
           {title}
         </Text>
         <TextInput
-          label="Email"
+          label={t('auth.email')}
           mode="outlined"
           value={email}
           onChangeText={setEmail}
@@ -49,7 +52,7 @@ export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
           textContentType="emailAddress"
         />
         <TextInput
-          label="Password"
+          label={t('auth.password')}
           mode="outlined"
           value={password}
           onChangeText={setPassword}

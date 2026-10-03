@@ -6,14 +6,16 @@ import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { TransactionRow } from '@/components/TransactionRow';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { groupByDay, listTransactions } from '@/lib/db/repositories/transactions';
+import { useT } from '@/i18n/i18n';
+import { useFormat } from '@/i18n/useFormat';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { useMonthStore } from '@/store/month';
 import { moneyColors } from '@/theme';
-import { formatDay } from '@/utils/date';
-import { formatBDT } from '@/utils/money';
 
 export default function TransactionsScreen() {
   const theme = useTheme();
+  const { t } = useT();
+  const f = useFormat();
   const colors = moneyColors(theme.dark);
   const month = useMonthStore((s) => s.month);
   const sections = useLocalQuery(
@@ -29,15 +31,15 @@ export default function TransactionsScreen() {
         sections={sections}
         keyExtractor={(t) => t.id}
         ListHeaderComponent={<MonthSwitcher />}
-        ListEmptyComponent={<Text style={styles.empty}>No transactions this month. Add one below.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('transactions.empty')}</Text>}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         stickySectionHeadersEnabled
         renderSectionHeader={({ section }) => (
           <View style={[styles.header, { backgroundColor: theme.colors.background }]}>
-            <Text variant="labelLarge">{formatDay(section.day)}</Text>
+            <Text variant="labelLarge">{f.day(section.day)}</Text>
             <Text variant="labelLarge" style={[styles.number, { color: section.net < 0 ? colors.expense : colors.income }]}>
               {section.net > 0 ? '+' : ''}
-              {formatBDT(section.net)}
+              {f.money(section.net)}
             </Text>
           </View>
         )}

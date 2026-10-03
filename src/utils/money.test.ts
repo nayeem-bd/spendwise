@@ -95,3 +95,14 @@ describe('poishaToInput', () => {
     }
   });
 });
+
+describe('formatBDTCompact in Bangla', () => {
+  it.each([
+    [95000, '৳৯৫০'],
+    [1250000, '৳১২.৫ হাজার'],
+    [12000000, '৳১.২ লাখ'],
+    [3500000000, '৳৩.৫ কোটি'],
+  ])('%i poisha → %s', (poisha, expected) => {
+    expect(formatBDTCompact(p(poisha), { bangla: true })).toBe(expected);
+  });
+});

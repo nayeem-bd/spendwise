@@ -2,6 +2,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
+import { useT } from '@/i18n/i18n';
+import { localDigits } from '@/utils/digits';
+
 import type { KeypadKey } from './keypad';
 
 const ROWS: KeypadKey[][] = [
@@ -13,6 +16,7 @@ const ROWS: KeypadKey[][] = [
 
 export function AmountKeypad({ onKey }: { onKey: (key: KeypadKey) => void }) {
   const theme = useTheme();
+  const { t, lang } = useT();
   return (
     <View style={styles.pad}>
       {ROWS.map((row) => (
@@ -22,7 +26,7 @@ export function AmountKeypad({ onKey }: { onKey: (key: KeypadKey) => void }) {
               key={key}
               onPress={() => onKey(key)}
               accessibilityRole="button"
-              accessibilityLabel={key === 'back' ? 'Delete' : key === '.' ? 'Decimal point' : key}
+              accessibilityLabel={key === 'back' ? t('common.delete') : key === '.' ? t('transaction.decimalPoint') : key}
               style={({ pressed }) => [
                 styles.key,
                 { backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.elevation.level1 },
@@ -31,7 +35,7 @@ export function AmountKeypad({ onKey }: { onKey: (key: KeypadKey) => void }) {
               {key === 'back' ? (
                 <MaterialCommunityIcons name="backspace-outline" size={24} color={theme.colors.onSurface} />
               ) : (
-                <Text variant="headlineSmall">{key}</Text>
+                <Text variant="headlineSmall">{localDigits(key, lang)}</Text>
               )}
             </Pressable>
           ))}
