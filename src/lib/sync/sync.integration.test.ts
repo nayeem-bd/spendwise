@@ -5,7 +5,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/database.types';
 import { defaultRowId } from '@/lib/db/defaults';
 import { listCategories } from '@/lib/db/repositories/categories';
-import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type TransactionInput } from '@/lib/db/repositories/transactions';
+import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type EntryInput } from '@/lib/db/repositories/transactions';
 import { seedDefaults } from '@/lib/db/seed';
 import type { LocalDb } from '@/lib/db/types';
 import { createTestDb } from '@/test/testDb';
@@ -45,7 +45,7 @@ const sync = async (d: Device) => {
   await pullAll(d.db, d.backend);
 };
 
-const expense = (userId: string, overrides: Partial<TransactionInput> = {}): TransactionInput => ({
+const expense = (userId: string, overrides: Partial<EntryInput> = {}): EntryInput => ({
   type: 'expense',
   amount: 25050 as Poisha,
   categoryId: defaultRowId(userId, 'category', 'food'),
