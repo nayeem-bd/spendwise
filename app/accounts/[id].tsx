@@ -6,17 +6,20 @@ import { Button, HelperText, Text, TextInput } from 'react-native-paper';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconBadge } from '@/components/IconBadge';
 import { ACCOUNT_ICONS, ColorPicker, COLORS, IconPicker } from '@/components/pickers';
+import { SharingSection } from '@/components/SharingSection';
 import { translate, translateError, useT } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { createAccount, deleteAccount, getAccount, updateAccount } from '@/lib/db/repositories/accounts';
-import { parseTaka, poishaToInput, ZERO } from '@/utils/money';
 import { goBack } from '@/lib/nav';
+import { parseTaka, poishaToInput, ZERO } from '@/utils/money';
 
 export default function AccountEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useUser();
   const { t } = useT();
+  const displayName = useDisplayName();
   const isNew = id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getAccount(getDb(), id)));
 
@@ -29,6 +32,20 @@ export default function AccountEditScreen() {
 
   if (!isNew && (!existing || existing.deletedAt)) {
     return <Text style={styles.missing}>{t('account.missing')}</Text>;
+  }
+
+  // Someone else's account shared with me: view only, with the option to leave.
+  if (existing && existing.userId !== user.id) {
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <Stack.Screen options={{ title: t('sharing.sharedAccount') }} />
+        <View style={styles.preview}>
+          <IconBadge icon={existing.icon} color={existing.color} size={64} />
+          <Text variant="headlineSmall">{displayName(existing.id, existing.name)}</Text>
+        </View>
+        <SharingSection accountId={existing.id} isOwner={false} />
+      </ScrollView>
+    );
   }
 
   const save = () => {
@@ -80,6 +97,7 @@ export default function AccountEditScreen() {
       <Button mode="contained" onPress={save}>
         {t('common.save')}
       </Button>
+      {!isNew && <SharingSection accountId={id} isOwner />}
       {!isNew && (
         <Button textColor="#C62828" onPress={() => setConfirmDelete(true)}>
           {t('account.delete')}
@@ -99,6 +117,6 @@ export default function AccountEditScreen() {
 
 const styles = StyleSheet.create({
   container: { padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
-  preview: { alignItems: 'center', marginVertical: 8 },
+  preview: { alignItems: 'center', marginVertical: 8, gap: 8 },
   missing: { padding: 24, textAlign: 'center' },
 });

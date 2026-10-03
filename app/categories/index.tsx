@@ -5,6 +5,7 @@ import { FAB, List, SegmentedButtons } from 'react-native-paper';
 
 import { IconBadge } from '@/components/IconBadge';
 import { useT } from '@/i18n/i18n';
+import { useUser } from '@/lib/auth/store';
 import { useDisplayName } from '@/i18n/names';
 import { listCategories } from '@/lib/db/repositories/categories';
 import type { CategoryType } from '@/lib/db/schema';
@@ -13,8 +14,9 @@ import { useLocalQuery } from '@/lib/db/useLocalQuery';
 export default function CategoriesScreen() {
   const [type, setType] = useState<CategoryType>('expense');
   const { t } = useT();
+  const user = useUser();
   const name = useDisplayName();
-  const items = useLocalQuery((db) => listCategories(db, type), ['categories'], [type]);
+  const items = useLocalQuery((db) => listCategories(db, type, user.id), ['categories'], [type]);
 
   return (
     <View style={styles.container}>

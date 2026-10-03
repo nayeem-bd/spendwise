@@ -5,6 +5,7 @@ import { Button, Chip, Dialog, Divider, List, Portal, SegmentedButtons, Switch, 
 
 import { translateError, useT } from '@/i18n/i18n';
 import { setLanguage } from '@/i18n/language';
+import { JoinSharedAccount } from '@/components/JoinSharedAccount';
 import { pendingChangeCount, signOut } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
@@ -93,6 +94,7 @@ export default function SettingsScreen() {
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => router.push('/accounts')}
         />
+        <JoinSharedAccount />
         <List.Item
           title={t('recurring.title')}
           left={(props) => <List.Icon {...props} icon="repeat" />}

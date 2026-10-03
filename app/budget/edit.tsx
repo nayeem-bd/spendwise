@@ -37,7 +37,7 @@ export default function BudgetEditScreen() {
   const [available] = useState(() => {
     if (!isNew) return [];
     const taken = new Set(budgetStatuses(getDb(), month).categories.map((c) => c.categoryId));
-    return listCategories(getDb(), 'expense').filter((c) => !taken.has(c.id));
+    return listCategories(getDb(), 'expense', user.id).filter((c) => !taken.has(c.id));
   });
 
   const title =
