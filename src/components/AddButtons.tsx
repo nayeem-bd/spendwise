@@ -4,6 +4,8 @@ import { Button } from 'react-native-paper';
 
 import { useT } from '@/i18n/i18n';
 
+import { page } from './layout';
+
 // Saturated in both themes so white labels stay readable.
 const EXPENSE = '#C62828';
 const INCOME = '#2E7D32';
@@ -13,7 +15,7 @@ export function AddButtons() {
   const { t } = useT();
   const open = (type: 'expense' | 'income') => router.push({ pathname: '/transaction/[id]', params: { id: 'new', type } });
   return (
-    <View style={styles.row}>
+    <View style={[page.narrow, styles.row]}>
       <Button mode="contained" icon="minus" buttonColor={EXPENSE} textColor="#fff" style={styles.button} contentStyle={styles.content} onPress={() => open('expense')}>
         {t('type.expense')}
       </Button>
