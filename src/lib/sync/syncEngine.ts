@@ -134,7 +134,12 @@ export function startSync(forUser: string): void {
     onTablesChanged((tables) => {
       if (!tables.has('outbox')) return;
       refreshPending();
-      if (running) return; // a sync is already going; its pending refresh will follow
+      // A sync is running: it may already be past its push, so queue one more
+      // run (syncNow's loop) instead of dropping this change until the next trigger.
+      if (running) {
+        rerun = true;
+        return;
+      }
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => void syncNow(), WRITE_DEBOUNCE_MS);
     }),
