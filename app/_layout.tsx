@@ -7,11 +7,18 @@ import { PaperProvider } from 'react-native-paper';
 import { initAuth } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/auth/store';
 import { DatabaseGate } from '@/lib/db/DatabaseGate';
+import { UpdateSnackbar } from '@/components/UpdateSnackbar';
+import { registerServiceWorker } from '@/lib/pwa';
 import { startSync } from '@/lib/sync/syncEngine';
+import { loadThemePreference, useThemeStore } from '@/store/theme';
 import { darkTheme, lightTheme, navTheme } from '@/theme';
 
+registerServiceWorker();
+
 export default function RootLayout() {
-  const dark = useColorScheme() === 'dark';
+  const system = useColorScheme();
+  const preference = useThemeStore((st) => st.preference);
+  const dark = preference === 'system' ? system === 'dark' : preference === 'dark';
   const theme = dark ? darkTheme : lightTheme;
 
   return (
@@ -20,7 +27,8 @@ export default function RootLayout() {
         <DatabaseGate>
           <AppStack />
         </DatabaseGate>
-        <StatusBar style="auto" />
+        <StatusBar style={dark ? 'light' : 'dark'} />
+        <UpdateSnackbar />
       </ThemeProvider>
     </PaperProvider>
   );
@@ -29,7 +37,10 @@ export default function RootLayout() {
 function AppStack() {
   const status = useAuthStore((s) => s.status);
   const userId = useAuthStore((s) => s.user?.id);
-  useEffect(initAuth, []);
+  useEffect(() => {
+    loadThemePreference();
+    initAuth();
+  }, []);
   useEffect(() => {
     if (userId) startSync(userId); // signOut() stops it before wiping
   }, [userId]);
