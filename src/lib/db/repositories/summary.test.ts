@@ -5,7 +5,7 @@ import { defaultRowId } from '../defaults';
 import { seedDefaults } from '../seed';
 import type { LocalDb } from '../types';
 import { deleteCategory } from './categories';
-import { expenseByCategory, monthTotals } from './summary';
+import { categoryComparison, expenseByCategory, monthlyTrend, monthTotals } from './summary';
 import { deleteTransaction, saveTransaction, type EntryInput } from './transactions';
 
 const USER = '11111111-1111-1111-1111-111111111111';
@@ -67,4 +67,26 @@ it('transfers are left out of monthly totals and the category breakdown', () => 
   });
   expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, balance: 5000000 - 60050 });
   expect(expenseByCategory(db, '2026-10')).toHaveLength(2);
+});
+
+it('monthlyTrend zero-fills and covers the months ending at the given one', () => {
+  expect(monthlyTrend(db, '2026-11', 4)).toEqual([
+    { month: '2026-08', income: 0, expense: 0 },
+    { month: '2026-09', income: 0, expense: 99999 },
+    { month: '2026-10', income: 5000000, expense: 60050 },
+    { month: '2026-11', income: 0, expense: 77777 },
+  ]);
+});
+
+it('categoryComparison lines up this month against last, including categories only in one of them', () => {
+  add('expense', 5000, transport, '2026-09-15');
+  const rows = categoryComparison(db, '2026-10').map((c) => [c.name, c.total, c.previous, c.change]);
+  expect(rows).toEqual([
+    ['Food & Groceries', 50050, 99999, 50050 - 99999],
+    ['Transport', 10000, 5000, 5000],
+  ]);
+  expect(categoryComparison(db, '2026-11').map((c) => [c.name, c.total, c.previous])).toEqual([
+    ['Food & Groceries', 77777, 50050],
+    ['Transport', 0, 10000],
+  ]);
 });

@@ -1,4 +1,4 @@
-import { and, between, desc, eq, getTableColumns, isNull } from 'drizzle-orm';
+import { and, between, desc, eq, getTableColumns, gte, inArray, isNull, lte, or, sql, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { monthRange } from '@/utils/date';
@@ -74,13 +74,7 @@ export function getTransaction(db: LocalDb, id: string): Transaction | undefined
 
 const toAccounts = alias(accounts, 'to_accounts');
 
-/**
- * Newest first, optionally for one month ('YYYY-MM'). Category/account names
- * come from rows even if those were deleted.
- */
-export function listTransactions(db: LocalDb, options: { month?: string; limit?: number } = {}): TransactionListItem[] {
-  const { month, limit = 1000 } = options;
-  const range = month ? monthRange(month) : null;
+function selectList(db: LocalDb, where: SQL | undefined, limit: number): TransactionListItem[] {
   return db
     .select({
       ...getTableColumns(transactions),
@@ -94,10 +88,62 @@ export function listTransactions(db: LocalDb, options: { month?: string; limit?:
     .leftJoin(categories, eq(categories.id, transactions.categoryId))
     .leftJoin(accounts, eq(accounts.id, transactions.accountId))
     .leftJoin(toAccounts, eq(toAccounts.id, transactions.toAccountId))
-    .where(and(isNull(transactions.deletedAt), range ? between(transactions.occurredOn, range.start, range.end) : undefined))
+    .where(and(isNull(transactions.deletedAt), where))
     .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt))
     .limit(limit)
     .all();
+}
+
+/**
+ * Newest first, optionally for one month ('YYYY-MM'). Category/account names
+ * come from rows even if those were deleted.
+ */
+export function listTransactions(db: LocalDb, options: { month?: string; limit?: number } = {}): TransactionListItem[] {
+  const { month, limit = 1000 } = options;
+  const range = month ? monthRange(month) : null;
+  return selectList(db, range ? between(transactions.occurredOn, range.start, range.end) : undefined, limit);
+}
+
+export type TransactionFilter = {
+  /** Matches the note, category name or account name (case-insensitive). */
+  text?: string;
+  types?: Transaction['type'][];
+  categoryIds?: string[];
+  from?: string; // 'YYYY-MM-DD', inclusive
+  to?: string;
+  minAmount?: Poisha;
+  maxAmount?: Poisha;
+};
+
+/** LIKE pattern for a literal substring: % and _ in user input are not wildcards. */
+const containsPattern = (text: string) => `%${text.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+export function searchTransactions(db: LocalDb, filter: TransactionFilter, limit = 2000): TransactionListItem[] {
+  const conditions: (SQL | undefined)[] = [];
+  const text = filter.text?.trim();
+  if (text) {
+    const pattern = containsPattern(text);
+    const like = (column: SQL | typeof transactions.note) => sql`lower(${column}) like ${pattern} escape '\\'`;
+    conditions.push(or(like(transactions.note), like(sql`${categories.name}`), like(sql`${accounts.name}`), like(sql`${toAccounts.name}`)));
+  }
+  if (filter.types?.length) conditions.push(inArray(transactions.type, filter.types));
+  if (filter.categoryIds?.length) conditions.push(inArray(transactions.categoryId, filter.categoryIds));
+  if (filter.from) conditions.push(gte(transactions.occurredOn, filter.from));
+  if (filter.to) conditions.push(lte(transactions.occurredOn, filter.to));
+  if (filter.minAmount !== undefined) conditions.push(gte(transactions.amount, filter.minAmount));
+  if (filter.maxAmount !== undefined) conditions.push(lte(transactions.amount, filter.maxAmount));
+  return selectList(db, and(...conditions), limit);
+}
+
+/** Income and expense totals of a list (transfers excluded). */
+export function totalsOf(items: readonly TransactionListItem[]): { income: Poisha; expense: Poisha } {
+  let income = 0;
+  let expense = 0;
+  for (const t of items) {
+    if (t.type === 'income') income += t.amount;
+    else if (t.type === 'expense') expense += t.amount;
+  }
+  return { income: income as Poisha, expense: expense as Poisha };
 }
 
 export type DaySection = { day: string; net: Poisha; data: TransactionListItem[] };
