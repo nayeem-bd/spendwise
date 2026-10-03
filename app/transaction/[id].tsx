@@ -11,13 +11,15 @@ import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { defaultRowId } from '@/lib/db/defaults';
 import { listAccounts } from '@/lib/db/repositories/accounts';
+import { budgetCrossings, budgetStatuses, type BudgetStatus } from '@/lib/db/repositories/budgets';
 import { listCategories } from '@/lib/db/repositories/categories';
 import { deleteTransaction, getTransaction, saveTransaction } from '@/lib/db/repositories/transactions';
 import type { Account } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
+import { showNotice } from '@/store/notice';
 import { moneyColors } from '@/theme';
-import { addDays, formatDay, todayISO } from '@/utils/date';
-import { parseTaka, poishaToInput } from '@/utils/money';
+import { addDays, formatDay, monthOf, todayISO } from '@/utils/date';
+import { formatBDT, parseTaka, poishaToInput } from '@/utils/money';
 
 type TxType = 'expense' | 'income' | 'transfer';
 
@@ -65,6 +67,8 @@ export default function TransactionScreen() {
       return;
     }
     const common = { amount, accountId: selectedAccountId ?? '', note, occurredOn };
+    const month = monthOf(occurredOn);
+    const before = budgetStatuses(getDb(), month);
     try {
       saveTransaction(
         getDb(),
@@ -74,6 +78,8 @@ export default function TransactionScreen() {
           : { ...common, type, categoryId: categoryId ?? '' },
         isNew ? undefined : params.id,
       );
+      const crossed = budgetCrossings(before, budgetStatuses(getDb(), month));
+      if (crossed.length) showNotice(crossed.map(describeBudgetAlert).join('\n'));
       router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -152,6 +158,13 @@ export default function TransactionScreen() {
       />
     </ScrollView>
   );
+}
+
+function describeBudgetAlert(s: BudgetStatus): string {
+  const what = s.categoryId === null ? 'Monthly budget' : s.name;
+  return s.level === 'over'
+    ? `${what}: over budget (${formatBDT(s.spent)} of ${formatBDT(s.amount)})`
+    : `${what}: ${Math.round(s.ratio * 100)}% of budget used`;
 }
 
 function AccountChips({
