@@ -1,3 +1,6 @@
+// Defines the OS background sync task; must load before anything else.
+import '@/lib/sync/backgroundTask';
+
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -62,6 +65,7 @@ function AppStack() {
         <Stack.Screen name="budget/edit" options={{ presentation: 'modal' }} />
         <Stack.Screen name="recurring/index" />
         <Stack.Screen name="recurring/[id]" />
+        <Stack.Screen name="search" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />

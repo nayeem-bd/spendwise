@@ -5,7 +5,11 @@ import { Button, Dialog, Divider, List, Portal, SegmentedButtons, Text } from 'r
 
 import { pendingChangeCount, signOut } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/store';
+import { getDb } from '@/lib/db/client';
+import { listTransactions } from '@/lib/db/repositories/transactions';
+import { exportTransactions } from '@/lib/export/exportTransactions';
 import { syncNow } from '@/lib/sync/syncEngine';
+import { showNotice } from '@/store/notice';
 import { setThemePreference, useThemeStore, type ThemePreference } from '@/store/theme';
 
 export default function SettingsScreen() {
@@ -13,6 +17,18 @@ export default function SettingsScreen() {
   const theme = useThemeStore((st) => st.preference);
   const [confirm, setConfirm] = useState<{ pending: number } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      await exportTransactions(listTransactions(getDb(), { limit: 1_000_000 }));
+    } catch (e) {
+      showNotice(e instanceof Error ? e.message : String(e));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const askSignOut = async () => {
     setBusy(true);
@@ -55,6 +71,13 @@ export default function SettingsScreen() {
           left={(props) => <List.Icon {...props} icon="repeat" />}
           right={(props) => <List.Icon {...props} icon="chevron-right" />}
           onPress={() => router.push('/recurring')}
+        />
+        <List.Item
+          title="Export to CSV"
+          description={exporting ? 'Preparing…' : 'All transactions, for Excel or Google Sheets'}
+          left={(props) => <List.Icon {...props} icon="file-delimited-outline" />}
+          onPress={exportAll}
+          disabled={exporting}
         />
       </List.Section>
       <Divider />
