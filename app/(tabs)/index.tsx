@@ -7,15 +7,20 @@ import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { expenseByCategory, monthTotals } from '@/lib/db/repositories/summary';
+import { useT } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
+import { useFormat } from '@/i18n/useFormat';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { useMonthStore } from '@/store/month';
 import { moneyColors } from '@/theme';
-import { formatBDT } from '@/utils/money';
 
 const FALLBACK_COLOR = '#9E9E9E';
 
 export default function HomeScreen() {
   const theme = useTheme();
+  const { t } = useT();
+  const f = useFormat();
+  const name = useDisplayName();
   const colors = moneyColors(theme.dark);
   const month = useMonthStore((s) => s.month);
   const totals = useLocalQuery((db) => monthTotals(db, month), ['transactions'], [month]);
@@ -36,34 +41,34 @@ export default function HomeScreen() {
             segments={byCategory.map((c) => ({ key: c.categoryId ?? 'none', value: c.total, color: c.color ?? FALLBACK_COLOR }))}
           >
             <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-              Spent
+              {t('home.spent')}
             </Text>
-            <Text variant="headlineSmall" style={[styles.number, { color: colors.expense }]} accessibilityLabel={`Spent ${formatBDT(totals.expense)}`}>
-              {formatBDT(totals.expense)}
+            <Text variant="headlineSmall" style={[styles.number, { color: colors.expense }]} accessibilityLabel={`${t('home.spent')} ${f.money(totals.expense)}`}>
+              {f.money(totals.expense)}
             </Text>
           </DonutChart>
         </View>
 
         <View style={styles.totals}>
-          <Total label="Income" value={formatBDT(totals.income)} color={colors.income} />
-          <Total label="Expense" value={formatBDT(totals.expense)} color={colors.expense} />
-          <Total label="Balance" value={formatBDT(totals.balance)} color={totals.balance < 0 ? colors.expense : theme.colors.onSurface} />
+          <Total label={t('type.income')} value={f.money(totals.income)} color={colors.income} />
+          <Total label={t('type.expense')} value={f.money(totals.expense)} color={colors.expense} />
+          <Total label={t('home.balance')} value={f.money(totals.balance)} color={totals.balance < 0 ? colors.expense : theme.colors.onSurface} />
         </View>
 
         {byCategory.length === 0 ? (
-          <Text style={styles.empty}>No spending this month yet.</Text>
+          <Text style={styles.empty}>{t('home.empty')}</Text>
         ) : (
           byCategory.map((c) => (
             <List.Item
               key={c.categoryId ?? 'none'}
-              title={c.name}
-              description={totals.expense > 0 ? `${Math.round((c.total / totals.expense) * 100)}%` : undefined}
+              title={name(c.categoryId, c.name) || t('common.uncategorized')}
+              description={totals.expense > 0 ? `${f.num(Math.round((c.total / totals.expense) * 100))}%` : undefined}
               left={() => (
                 <View style={styles.icon}>
                   <IconBadge icon={c.icon} color={c.color} size={36} />
                 </View>
               )}
-              right={() => <Text style={[styles.number, styles.amount]}>{formatBDT(c.total)}</Text>}
+              right={() => <Text style={[styles.number, styles.amount]}>{f.money(c.total)}</Text>}
             />
           ))
         )}

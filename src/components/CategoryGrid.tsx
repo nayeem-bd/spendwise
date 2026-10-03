@@ -1,12 +1,14 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
+import { useDisplayName } from '@/i18n/names';
 import type { Category } from '@/lib/db/schema';
 
 import { IconBadge } from './IconBadge';
 
 export function CategoryGrid({ categories, value, onChange }: { categories: Category[]; value: string | null; onChange: (id: string) => void }) {
   const theme = useTheme();
+  const name = useDisplayName();
   return (
     <View style={styles.grid}>
       {categories.map((c) => {
@@ -17,12 +19,12 @@ export function CategoryGrid({ categories, value, onChange }: { categories: Cate
             onPress={() => onChange(c.id)}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            accessibilityLabel={c.name}
+            accessibilityLabel={name(c.id, c.name)}
             style={[styles.cell, selected && { backgroundColor: theme.colors.secondaryContainer }]}
           >
             <IconBadge icon={c.icon} color={c.color} size={40} />
             <Text variant="labelSmall" numberOfLines={2} style={styles.label}>
-              {c.name}
+              {name(c.id, c.name)}
             </Text>
           </Pressable>
         );

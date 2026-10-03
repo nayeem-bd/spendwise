@@ -4,6 +4,9 @@ import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Chip, Divider, Searchbar, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { TransactionRow } from '@/components/TransactionRow';
+import { translateError, useT, type StringKey } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
+import { useFormat } from '@/i18n/useFormat';
 import { listCategories } from '@/lib/db/repositories/categories';
 import { searchTransactions, totalsOf, type TransactionFilter } from '@/lib/db/repositories/transactions';
 import type { TransactionType } from '@/lib/db/schema';
@@ -12,21 +15,21 @@ import { exportTransactions } from '@/lib/export/exportTransactions';
 import { showNotice } from '@/store/notice';
 import { moneyColors } from '@/theme';
 import { addMonths, monthOf, monthRange, todayISO } from '@/utils/date';
-import { formatBDT, parseTaka } from '@/utils/money';
+import { parseTaka } from '@/utils/money';
 
 type Period = 'all' | 'month' | '3months' | 'year';
 
-const PERIODS: { value: Period; label: string }[] = [
-  { value: 'all', label: 'All time' },
-  { value: 'month', label: 'This month' },
-  { value: '3months', label: 'Last 3 months' },
-  { value: 'year', label: 'This year' },
+const PERIODS: { value: Period; label: StringKey }[] = [
+  { value: 'all', label: 'search.allTime' },
+  { value: 'month', label: 'search.thisMonth' },
+  { value: '3months', label: 'search.last3Months' },
+  { value: 'year', label: 'search.thisYear' },
 ];
 
-const TYPES: { value: TransactionType; label: string }[] = [
-  { value: 'expense', label: 'Expense' },
-  { value: 'income', label: 'Income' },
-  { value: 'transfer', label: 'Transfer' },
+const TYPES: { value: TransactionType; label: StringKey }[] = [
+  { value: 'expense', label: 'type.expense' },
+  { value: 'income', label: 'type.income' },
+  { value: 'transfer', label: 'type.transfer' },
 ];
 
 function periodRange(period: Period): { from?: string; to?: string } {
@@ -48,6 +51,9 @@ const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(
 
 export default function SearchScreen() {
   const theme = useTheme();
+  const { t } = useT();
+  const f = useFormat();
+  const name = useDisplayName();
   const colors = moneyColors(theme.dark);
   const [text, setText] = useState('');
   const [period, setPeriod] = useState<Period>('all');
@@ -76,7 +82,7 @@ export default function SearchScreen() {
     try {
       await exportTransactions(results);
     } catch (e) {
-      showNotice(e instanceof Error ? e.message : String(e));
+      showNotice(translateError(e));
     } finally {
       setExporting(false);
     }
@@ -84,7 +90,7 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Search' }} />
+      <Stack.Screen options={{ title: t('search.title') }} />
       <FlatList
         data={results}
         keyExtractor={(t) => t.id}
@@ -92,18 +98,18 @@ export default function SearchScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.filters}>
-            <Searchbar placeholder="Note, category or account" value={text} onChangeText={setText} autoFocus />
+            <Searchbar placeholder={t('search.placeholder')} value={text} onChangeText={setText} autoFocus />
             <ChipRow>
               {PERIODS.map((p) => (
                 <Chip key={p.value} selected={period === p.value} showSelectedOverlay onPress={() => setPeriod(p.value)}>
-                  {p.label}
+                  {t(p.label)}
                 </Chip>
               ))}
             </ChipRow>
             <ChipRow>
-              {TYPES.map((t) => (
-                <Chip key={t.value} selected={types.includes(t.value)} showSelectedOverlay onPress={() => setTypes(toggle(types, t.value))}>
-                  {t.label}
+              {TYPES.map((ty) => (
+                <Chip key={ty.value} selected={types.includes(ty.value)} showSelectedOverlay onPress={() => setTypes(toggle(types, ty.value))}>
+                  {t(ty.label)}
                 </Chip>
               ))}
             </ChipRow>
@@ -115,20 +121,20 @@ export default function SearchScreen() {
                   showSelectedOverlay
                   onPress={() => setCategoryIds(toggle(categoryIds, c.id))}
                 >
-                  {c.name}
+                  {name(c.id, c.name)}
                 </Chip>
               ))}
             </ChipRow>
             <View style={styles.amounts}>
-              <TextInput style={styles.amount} dense mode="outlined" label="Min ৳" value={minText} onChangeText={setMinText} keyboardType="decimal-pad" />
-              <TextInput style={styles.amount} dense mode="outlined" label="Max ৳" value={maxText} onChangeText={setMaxText} keyboardType="decimal-pad" />
+              <TextInput style={styles.amount} dense mode="outlined" label={t('search.min')} value={minText} onChangeText={setMinText} keyboardType="decimal-pad" />
+              <TextInput style={styles.amount} dense mode="outlined" label={t('search.max')} value={maxText} onChangeText={setMaxText} keyboardType="decimal-pad" />
             </View>
             <Divider />
             <View style={styles.summaryRow}>
               <Text variant="labelLarge" style={styles.summary}>
-                {results.length} result{results.length === 1 ? '' : 's'}
-                {totals.expense > 0 && <Text style={{ color: colors.expense }}> · −{formatBDT(totals.expense)}</Text>}
-                {totals.income > 0 && <Text style={{ color: colors.income }}> · +{formatBDT(totals.income)}</Text>}
+                {t(results.length === 1 ? 'search.resultOne' : 'search.results', { count: results.length })}
+                {totals.expense > 0 && <Text style={{ color: colors.expense }}> · −{f.money(totals.expense)}</Text>}
+                {totals.income > 0 && <Text style={{ color: colors.income }}> · +{f.money(totals.income)}</Text>}
               </Text>
               <Button icon="download" compact onPress={exportResults} loading={exporting} disabled={exporting || results.length === 0}>
                 CSV
@@ -136,7 +142,7 @@ export default function SearchScreen() {
             </View>
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>No transactions match.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('search.empty')}</Text>}
         renderItem={({ item }) => <TransactionRow item={item} showDate />}
       />
     </View>

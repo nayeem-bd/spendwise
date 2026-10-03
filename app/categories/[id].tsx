@@ -6,6 +6,7 @@ import { Button, HelperText, SegmentedButtons, Text, TextInput } from 'react-nat
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconBadge } from '@/components/IconBadge';
 import { CATEGORY_ICONS, ColorPicker, COLORS, IconPicker } from '@/components/pickers';
+import { translateError, useT } from '@/i18n/i18n';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { createCategory, deleteCategory, getCategory, updateCategory } from '@/lib/db/repositories/categories';
@@ -14,6 +15,7 @@ import type { CategoryType } from '@/lib/db/schema';
 export default function CategoryEditScreen() {
   const { id, type: typeParam } = useLocalSearchParams<{ id: string; type?: CategoryType }>();
   const user = useUser();
+  const { t } = useT();
   const isNew = id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getCategory(getDb(), id)));
 
@@ -25,7 +27,7 @@ export default function CategoryEditScreen() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!isNew && (!existing || existing.deletedAt)) {
-    return <Text style={styles.missing}>This category no longer exists.</Text>;
+    return <Text style={styles.missing}>{t('category.missing')}</Text>;
   }
 
   const save = () => {
@@ -35,7 +37,7 @@ export default function CategoryEditScreen() {
       else updateCategory(db, id, { name, icon, color });
       router.back();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(translateError(e));
     }
   };
 
@@ -47,39 +49,39 @@ export default function CategoryEditScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Stack.Screen options={{ title: isNew ? 'New category' : 'Edit category' }} />
+      <Stack.Screen options={{ title: isNew ? t('category.new') : t('category.edit') }} />
       <View style={styles.preview}>
         <IconBadge icon={icon} color={color} size={64} />
       </View>
-      <TextInput label="Name" mode="outlined" value={name} onChangeText={setName} maxLength={40} />
+      <TextInput label={t('common.name')} mode="outlined" value={name} onChangeText={setName} maxLength={40} />
       {isNew && (
         <SegmentedButtons
           value={type}
           onValueChange={(v) => setType(v as CategoryType)}
           buttons={[
-            { value: 'expense', label: 'Expense' },
-            { value: 'income', label: 'Income' },
+            { value: 'expense', label: t('type.expense') },
+            { value: 'income', label: t('type.income') },
           ]}
         />
       )}
-      <Text variant="titleSmall">Icon</Text>
+      <Text variant="titleSmall">{t('common.icon')}</Text>
       <IconPicker icons={CATEGORY_ICONS} value={icon} color={color} onChange={setIcon} />
-      <Text variant="titleSmall">Colour</Text>
+      <Text variant="titleSmall">{t('common.colour')}</Text>
       <ColorPicker value={color} onChange={setColor} />
       {error && <HelperText type="error">{error}</HelperText>}
       <Button mode="contained" onPress={save}>
-        Save
+        {t('common.save')}
       </Button>
       {!isNew && (
         <Button textColor="#C62828" onPress={() => setConfirmDelete(true)}>
-          Delete category
+          {t('category.delete')}
         </Button>
       )}
       <ConfirmDialog
         visible={confirmDelete}
-        title="Delete category?"
-        message="Past transactions keep this category's name. You won't be able to pick it for new ones."
-        confirmLabel="Delete"
+        title={t('category.deleteTitle')}
+        message={t('category.deleteMessage')}
+        confirmLabel={t('common.delete')}
         onConfirm={remove}
         onDismiss={() => setConfirmDelete(false)}
       />

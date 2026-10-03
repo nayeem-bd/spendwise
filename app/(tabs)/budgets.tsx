@@ -6,6 +6,7 @@ import { BudgetRow } from '@/components/BudgetRow';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { budgetStatuses } from '@/lib/db/repositories/budgets';
+import { useT } from '@/i18n/i18n';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { useMonthStore } from '@/store/month';
 
@@ -13,6 +14,7 @@ const edit = (month: string, category: string) => router.push({ pathname: '/budg
 
 export default function BudgetsScreen() {
   const month = useMonthStore((s) => s.month);
+  const { t } = useT();
   const { total, categories } = useLocalQuery(
     (db) => budgetStatuses(db, month),
     ['budgets', 'transactions', 'categories'],
@@ -27,26 +29,26 @@ export default function BudgetsScreen() {
     >
       <MonthSwitcher />
 
-      <List.Subheader>Whole month</List.Subheader>
+      <List.Subheader>{t('budget.wholeMonth')}</List.Subheader>
       {total ? (
         <BudgetRow status={total} onPress={() => edit(month, 'total')} />
       ) : (
         <View style={styles.empty}>
-          <Text>Set a limit for all your spending this month.</Text>
+          <Text>{t('budget.wholeMonthHint')}</Text>
           <Button mode="outlined" icon="plus" onPress={() => edit(month, 'total')}>
-            Set monthly budget
+            {t('budget.setMonthly')}
           </Button>
         </View>
       )}
 
       <Divider style={styles.divider} />
-      <List.Subheader>Categories</List.Subheader>
-      {categories.length === 0 && <Text style={styles.hint}>No category budgets yet.</Text>}
+      <List.Subheader>{t('settings.categories')}</List.Subheader>
+      {categories.length === 0 && <Text style={styles.hint}>{t('budget.noneYet')}</Text>}
       {categories.map((c) => (
         <BudgetRow key={c.categoryId} status={c} onPress={() => edit(month, c.categoryId!)} />
       ))}
       <Button icon="plus" style={styles.add} onPress={() => edit(month, 'new')}>
-        Add category budget
+        {t('budget.addCategory')}
       </Button>
     </ScrollView>
   );

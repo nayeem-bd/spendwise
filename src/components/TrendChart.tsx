@@ -3,10 +3,11 @@ import { type LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg';
 
+import { useT } from '@/i18n/i18n';
+import { useFormat } from '@/i18n/useFormat';
 import type { MonthPoint } from '@/lib/db/repositories/summary';
 import { moneyColors } from '@/theme';
-import { formatMonth } from '@/utils/date';
-import { formatBDTCompact, type Poisha } from '@/utils/money';
+import type { Poisha } from '@/utils/money';
 
 const HEIGHT = 200;
 const LABEL_HEIGHT = 20;
@@ -15,6 +16,8 @@ const TOP_PAD = 16;
 /** Grouped income/expense bars per month, drawn with plain SVG so it matches on every platform. */
 export function TrendChart({ data, selected }: { data: MonthPoint[]; selected: string }) {
   const theme = useTheme();
+  const { t } = useT();
+  const f = useFormat();
   const colors = moneyColors(theme.dark);
   const [width, setWidth] = useState(0);
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
@@ -26,12 +29,12 @@ export function TrendChart({ data, selected }: { data: MonthPoint[]; selected: s
   const y = (v: number) => TOP_PAD + plot - (v / max) * plot;
 
   return (
-    <View onLayout={onLayout} accessibilityRole="image" accessibilityLabel={describe(data)}>
+    <View onLayout={onLayout} accessibilityRole="image" accessibilityLabel={data.map((d) => t('reports.a11yMonth', { month: f.month(d.month), income: f.compact(d.income), expense: f.compact(d.expense) })).join('; ')}>
       {width > 0 && (
         <Svg width={width} height={HEIGHT}>
           <Line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke={theme.colors.outlineVariant} strokeWidth={1} />
           <SvgText x={2} y={TOP_PAD - 4} fontSize={10} fill={theme.colors.onSurfaceVariant}>
-            {formatBDTCompact(max as Poisha)}
+            {f.compact(max as Poisha)}
           </SvgText>
           {data.map((d, i) => {
             const cx = slot * i + slot / 2;
@@ -48,15 +51,15 @@ export function TrendChart({ data, selected }: { data: MonthPoint[]; selected: s
                 textAnchor="middle"
                 fill={theme.colors.onSurface}
               >
-                {formatMonth(d.month).slice(0, 3)}
+                {f.month(d.month).split(' ')[0]}
               </SvgText>,
             ];
           })}
         </Svg>
       )}
       <View style={styles.legend}>
-        <Legend color={colors.income} label="Income" />
-        <Legend color={colors.expense} label="Expense" />
+        <Legend color={colors.income} label={t('type.income')} />
+        <Legend color={colors.expense} label={t('type.expense')} />
       </View>
     </View>
   );
@@ -70,9 +73,6 @@ function Legend({ color, label }: { color: string; label: string }) {
     </View>
   );
 }
-
-const describe = (data: MonthPoint[]) =>
-  data.map((d) => `${formatMonth(d.month)}: income ${formatBDTCompact(d.income)}, expense ${formatBDTCompact(d.expense)}`).join('; ');
 
 const styles = StyleSheet.create({
   legend: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 4 },
