@@ -7,6 +7,10 @@ import { defaultRowId } from '@/lib/db/defaults';
 import { listCategories } from '@/lib/db/repositories/categories';
 import { createRecurring, getRecurring, materializeRecurring } from '@/lib/db/repositories/recurring';
 import { budgetStatuses, setBudget } from '@/lib/db/repositories/budgets';
+import { addAttachment, getAttachmentData, listAttachments } from '@/lib/db/repositories/attachments';
+import { bytesToBase64 } from '@/utils/base64';
+
+import { downloadAttachment, supabaseAttachmentStore, uploadPendingAttachments } from './attachments';
 import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type EntryInput } from '@/lib/db/repositories/transactions';
 import { seedDefaults } from '@/lib/db/seed';
 import type { LocalDb } from '@/lib/db/types';
@@ -122,6 +126,26 @@ describeIf('sync against local Supabase', () => {
       '2026-08-31',
     ]);
     expect(budgetStatuses(phoneB.db, '2026-10').total?.amount).toBe(9000000);
+  });
+
+  it('receipt photos upload to Storage and download on another device; other users are blocked', async () => {
+    // A tiny valid JPEG (SOI + APP0 + EOI) so Storage accepts the image type.
+    const jpeg = bytesToBase64(Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70, 73, 70, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0xff, 0xd9]));
+    const tx = saveTransaction(phoneA.db, user.userId, expense(user.userId, { note: 'with receipt' }));
+    const photo = addAttachment(phoneA.db, user.userId, tx.id, jpeg);
+    await uploadPendingAttachments(phoneA.db, supabaseAttachmentStore(phoneA.client));
+    await sync(phoneA);
+    await sync(phoneB);
+
+    expect(listAttachments(phoneB.db, tx.id).map((a) => a.id)).toEqual([photo.id]);
+    expect(await downloadAttachment(phoneB.db, supabaseAttachmentStore(phoneB.client), photo.id)).toBe(jpeg);
+    expect(getAttachmentData(phoneB.db, photo.id)).toBe(jpeg);
+
+    const stranger = await device(await signUpUser());
+    await expect(supabaseAttachmentStore(stranger.client).download(photo.storagePath)).rejects.toThrow('Receipt download failed');
+    await expect(
+      supabaseAttachmentStore(stranger.client).upload(`${user.userId}/evil.jpg`, new Uint8Array([1]), 'image/jpeg'),
+    ).rejects.toThrow('Receipt upload failed');
   });
 
   it('another user sees none of it', async () => {

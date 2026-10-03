@@ -75,7 +75,31 @@ export const recurringRules = sqliteTable('recurring_rules', {
   active: integer('active', { mode: 'boolean' }).notNull().default(true),
 });
 
+/** A receipt photo's metadata. The image is in Storage (and attachment_files on this device). */
+export const attachments = sqliteTable(
+  'attachments',
+  {
+    ...syncColumns,
+    transactionId: text('transaction_id').notNull(),
+    storagePath: text('storage_path').notNull(), // '<user_id>/<attachment_id>.jpg'
+    contentType: text('content_type').notNull().default('image/jpeg'),
+    sizeBytes: integer('size_bytes').notNull(),
+  },
+  (t) => [index('attachments_transaction_idx').on(t.transactionId)],
+);
+
 // ---- Local-only tables (never synced) ----
+
+/**
+ * Image data for attachments on this device (base64 JPEG). 'pending' =
+ * waiting to upload, 'synced' = uploaded or downloaded and cached.
+ * Read one row at a time: on web a single sync query result is capped at ~1 MB.
+ */
+export const attachmentFiles = sqliteTable('attachment_files', {
+  attachmentId: text('attachment_id').primaryKey(),
+  data: text('data').notNull(),
+  state: text('state').$type<'pending' | 'synced'>().notNull(),
+});
 
 export const outbox = sqliteTable(
   'outbox',
@@ -109,6 +133,7 @@ export const syncedTables = {
   transactions,
   budgets,
   recurring_rules: recurringRules,
+  attachments,
 } as const;
 
 export type SyncedTableName = keyof typeof syncedTables;
@@ -119,3 +144,4 @@ export type Transaction = typeof transactions.$inferSelect;
 export type Budget = typeof budgets.$inferSelect;
 export type RecurringRule = typeof recurringRules.$inferSelect;
 export type OutboxEntry = typeof outbox.$inferSelect;
+export type Attachment = typeof attachments.$inferSelect;

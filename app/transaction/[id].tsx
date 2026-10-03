@@ -6,11 +6,13 @@ import { Button, Chip, HelperText, IconButton, SegmentedButtons, Text, TextInput
 import { AmountKeypad } from '@/components/AmountKeypad';
 import { CategoryGrid } from '@/components/CategoryGrid';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { ReceiptStrip } from '@/components/ReceiptStrip';
 import { applyKey, displayAmountText } from '@/components/keypad';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { defaultRowId } from '@/lib/db/defaults';
 import { listAccounts } from '@/lib/db/repositories/accounts';
+import { addAttachment, deleteAttachment, listAttachments } from '@/lib/db/repositories/attachments';
 import { budgetCrossings, budgetStatuses, type BudgetStatus } from '@/lib/db/repositories/budgets';
 import { listCategories } from '@/lib/db/repositories/categories';
 import { createRecurring, materializeRecurring } from '@/lib/db/repositories/recurring';
@@ -56,12 +58,18 @@ export default function TransactionScreen() {
   const [occurredOn, setOccurredOn] = useState(existing?.occurredOn ?? todayISO());
   const [note, setNote] = useState(existing?.note ?? '');
   const [repeat, setRepeat] = useState<Frequency | 'never'>('never');
+  const [pendingPhotos, setPendingPhotos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const categoryType = type === 'income' ? 'income' : 'expense';
   const categories = useLocalQuery((db) => listCategories(db, categoryType), ['categories'], [categoryType]);
   const accounts = useLocalQuery(listAccounts, ['accounts']);
+  const savedPhotoIds = useLocalQuery(
+    (db) => (isNew ? [] : listAttachments(db, params.id).map((a) => a.id)),
+    ['attachments'],
+    [params.id],
+  );
   // Default to Cash, else the first account.
   const selectedAccountId =
     accountId ?? accounts.find((a) => a.id === defaultRowId(user.id, 'account', 'cash'))?.id ?? accounts[0]?.id ?? null;
@@ -97,7 +105,8 @@ export default function TransactionScreen() {
         materializeRecurring(getDb(), todayISO());
         if (occurredOn > todayISO()) showNotice(t('recurring.startsLater', { frequency: t(`repeat.${repeat}`), day: f.day(occurredOn) }));
       } else {
-        saveTransaction(getDb(), user.id, input, isNew ? undefined : params.id);
+        const saved = saveTransaction(getDb(), user.id, input, isNew ? undefined : params.id);
+        for (const photo of pendingPhotos) addAttachment(getDb(), user.id, saved.id, photo);
       }
       const crossed = budgetCrossings(before, budgetStatuses(getDb(), month));
       if (crossed.length) showNotice(crossed.map(describeBudgetAlert).join('\n'));
@@ -164,6 +173,23 @@ export default function TransactionScreen() {
       </View>
 
       <TextInput label={t('transaction.note')} mode="outlined" value={note} onChangeText={setNote} maxLength={200} />
+
+      {!(isNew && repeat !== 'never') && (
+        <ReceiptStrip
+          savedIds={savedPhotoIds}
+          pending={pendingPhotos}
+          onAdd={(photo) => {
+            if (isNew) return setPendingPhotos((list) => [...list, photo]);
+            try {
+              addAttachment(getDb(), user.id, params.id, photo);
+            } catch (e) {
+              showNotice(translateError(e));
+            }
+          }}
+          onDeleteSaved={(id) => deleteAttachment(getDb(), id)}
+          onDeletePending={(index) => setPendingPhotos((list) => list.filter((_, i) => i !== index))}
+        />
+      )}
 
       {isNew ? (
         <>
