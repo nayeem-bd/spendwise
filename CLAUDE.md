@@ -38,7 +38,7 @@ Run `nvm use` first. Packages come from npmjs.org via the project `.npmrc` (the 
 - Health check: `npx expo-doctor`
 - Web build (what Netlify runs): `npm run build:web` → `dist/` (expo export + PWA tags + Workbox service worker)
 - Android preview APK: `npx eas-cli@latest build -p android --profile preview` (env vars from the EAS `preview` environment)
-- Local backend: `npx supabase start` (needs Docker) · stop: `npx supabase stop`
+- Local backend: `npx supabase start` (needs Docker; keep the Storage service on, receipts need it) · stop: `npx supabase stop`
 - Reset local DB (re-run migrations + seed): `npx supabase db reset`
 - Backend tests (pgTAP, RLS + triggers): `npx supabase test db`
 - New Supabase migration: `npx supabase migration new <name>`
@@ -52,4 +52,6 @@ Run `nvm use` first. Packages come from npmjs.org via the project `.npmrc` (the 
 - Local schema mirrors Supabase but money is integer poisha, timestamps ISO text, no local FKs. Server money is `numeric(14,2)` taka; the sync layer converts.
 - Sync lives in `src/lib/sync/`: `push.ts` / `pull.ts` (pure logic over a `SyncBackend`), `supabaseBackend.ts`, `syncEngine.ts` (triggers, backoff, status store). The server side is the `push_changes` RPC (LWW on `updated_at`, returns current rows, per-user advisory lock). Any code that writes synced rows outside `write.ts` must call `notifyChanged()`.
 - Generated or per-period rows use deterministic UUIDv5 ids so devices never duplicate them: budgets `uuidv5('budget:<category|total>:<YYYY-MM>', user_id)`, recurring occurrences `uuidv5('occurrence:<date>', rule_id)` (created on the device by `materializeRecurring`, not by a server job; stamped with the occurrence date so user edits/deletes win LWW).
+- UI text goes through `useT()` / `translate()` (`src/i18n/`): add every key to `en.ts` and `bn.ts` (typed; tests check both). Show money/dates with `useFormat()` and category/account names with `useDisplayName()`. Data-layer errors are translated at display time via `translateError()` (`'error.<English message>'` keys).
+- Receipt photos: metadata row in `attachments` (synced); image data in the local-only `attachment_files` table (read one row at a time: web sync reads are capped at ~1 MB) and in the private Storage bucket `receipts` at `<user_id>/<attachment_id>.jpg`.
 - Default accounts/categories use deterministic ids `uuidv5(user_id, '<kind>:<key>')` (see `handle_new_user()` in `supabase/migrations/`). Device-side seeding must use the same keys.
