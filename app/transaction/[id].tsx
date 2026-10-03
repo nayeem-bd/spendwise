@@ -11,7 +11,9 @@ import { applyKey, displayAmountText } from '@/components/keypad';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { defaultRowId } from '@/lib/db/defaults';
-import { listAccounts } from '@/lib/db/repositories/accounts';
+import { getAccount, listAccounts } from '@/lib/db/repositories/accounts';
+import { getCategory } from '@/lib/db/repositories/categories';
+import { memberEmail, sharingSummary } from '@/lib/db/repositories/sharing';
 import { addAttachment, deleteAttachment, listAttachments } from '@/lib/db/repositories/attachments';
 import { budgetCrossings, budgetStatuses, type BudgetStatus } from '@/lib/db/repositories/budgets';
 import { listCategories } from '@/lib/db/repositories/categories';
@@ -79,6 +81,40 @@ export default function TransactionScreen() {
 
   if (!isNew && (!existing || existing.deletedAt)) {
     return <Text style={styles.missing}>{t('transaction.missing')}</Text>;
+  }
+
+  // Added by someone who shares this account with me: view only.
+  if (existing && existing.userId !== user.id) {
+    const category = existing.categoryId ? getCategory(getDb(), existing.categoryId) : undefined;
+    const from = existing.accountId ? getAccount(getDb(), existing.accountId) : undefined;
+    const to = existing.toAccountId ? getAccount(getDb(), existing.toAccountId) : undefined;
+    const rows: [string, string][] = [
+      existing.type === 'transfer'
+        ? [t('type.transfer'), `${displayName(from?.id, from?.name)} → ${displayName(to?.id, to?.name)}`]
+        : [t('transaction.category'), displayName(category?.id, category?.name) || t('common.uncategorized')],
+      ...(existing.type !== 'transfer' ? [[t('transaction.account'), displayName(from?.id, from?.name)] as [string, string]] : []),
+      [t('transaction.date'), f.day(existing.occurredOn)],
+      ...(existing.note ? [[t('transaction.note'), existing.note] as [string, string]] : []),
+    ];
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <Stack.Screen options={{ title: t('transaction.title') }} />
+        <Text variant="displaySmall" style={[styles.amount, { color: existing.type === 'transfer' ? theme.colors.onSurface : moneyColors(theme.dark)[existing.type] }]}>
+          {f.money(existing.amount)}
+        </Text>
+        {rows.map(([label, value]) => (
+          <View key={label} style={styles.readRow}>
+            <Text variant="labelLarge">{label}</Text>
+            <Text style={styles.readValue}>{value}</Text>
+          </View>
+        ))}
+        <Text variant="bodyMedium">{t('transaction.addedBy', { email: memberEmail(getDb(), existing.userId) ?? '?' })}</Text>
+        {savedPhotoIds.length > 0 && (
+          <ReceiptStrip savedIds={savedPhotoIds} pending={[]} onAdd={() => undefined} onDeleteSaved={() => undefined} onDeletePending={() => undefined} readOnly />
+        )}
+        <Text variant="bodySmall">{t('transaction.readOnly')}</Text>
+      </ScrollView>
+    );
   }
 
   const changeType = (next: TxType) => {
@@ -247,19 +283,26 @@ function AccountChips({
   disabledId?: string | null;
 }) {
   const name = useDisplayName();
+  const user = useUser();
+  // Two "Cash" accounts (mine and one shared with me) must be told apart.
+  const shared = useLocalQuery(sharingSummary, ['account_members']);
   return (
     <View style={styles.chips}>
-      {accounts.map((a) => (
-        <Chip
-          key={a.id}
-          selected={a.id === value}
-          showSelectedOverlay
-          disabled={a.id === disabledId}
-          onPress={() => onChange(a.id)}
-        >
-          {name(a.id, a.name)}
-        </Chip>
-      ))}
+      {accounts.map((a) => {
+        const owner = a.userId !== user.id ? shared.get(a.id)?.ownerEmail.split('@')[0] : undefined;
+        return (
+          <Chip
+            key={a.id}
+            selected={a.id === value}
+            showSelectedOverlay
+            icon={shared.has(a.id) ? 'account-multiple' : undefined}
+            disabled={a.id === disabledId}
+            onPress={() => onChange(a.id)}
+          >
+            {owner ? `${name(a.id, a.name)} · ${owner}` : name(a.id, a.name)}
+          </Chip>
+        );
+      })}
     </View>
   );
 }
@@ -271,4 +314,6 @@ const styles = StyleSheet.create({
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   saveContent: { height: 48 },
   missing: { padding: 24, textAlign: 'center' },
+  readRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 16 },
+  readValue: { flexShrink: 1, textAlign: 'right' },
 });

@@ -18,9 +18,11 @@ type Props = {
   onAdd: (base64: string) => void;
   onDeleteSaved: (id: string) => void;
   onDeletePending: (index: number) => void;
+  /** View only (someone else's transaction): no adding or deleting. */
+  readOnly?: boolean;
 };
 
-export function ReceiptStrip({ savedIds, pending, onAdd, onDeleteSaved, onDeletePending }: Props) {
+export function ReceiptStrip({ savedIds, pending, onAdd, onDeleteSaved, onDeletePending, readOnly = false }: Props) {
   const { t } = useT();
   const [busy, setBusy] = useState(false);
   const [viewing, setViewing] = useState<{ base64: string; remove: () => void } | null>(null);
@@ -48,6 +50,7 @@ export function ReceiptStrip({ savedIds, pending, onAdd, onDeleteSaved, onDelete
         {pending.map((base64, i) => (
           <Thumb key={`p${i}`} base64={base64} onPress={() => setViewing({ base64, remove: () => onDeletePending(i) })} />
         ))}
+        {!readOnly && (
         <View style={styles.actions}>
           {Platform.OS !== 'web' && (
             <Button icon="camera" mode="outlined" compact disabled={busy} onPress={() => void add('camera')}>
@@ -58,6 +61,7 @@ export function ReceiptStrip({ savedIds, pending, onAdd, onDeleteSaved, onDelete
             {t('receipt.library')}
           </Button>
         </View>
+        )}
       </ScrollView>
 
       <Modal visible={viewing !== null} transparent animationType="fade" onRequestClose={() => setViewing(null)}>
@@ -65,7 +69,9 @@ export function ReceiptStrip({ savedIds, pending, onAdd, onDeleteSaved, onDelete
           {viewing && <Image source={{ uri: uri(viewing.base64) }} style={styles.full} resizeMode="contain" accessibilityLabel={t('receipt.title')} />}
           <View style={styles.viewerBar}>
             <IconButton icon="close" iconColor="#fff" accessibilityLabel={t('common.cancel')} onPress={() => setViewing(null)} />
-            <IconButton icon="delete" iconColor="#fff" accessibilityLabel={t('receipt.delete')} onPress={() => setConfirm(true)} />
+            {!readOnly && (
+              <IconButton icon="delete" iconColor="#fff" accessibilityLabel={t('receipt.delete')} onPress={() => setConfirm(true)} />
+            )}
           </View>
         </View>
         <ConfirmDialog

@@ -62,3 +62,17 @@ export function purgeEndedMemberships(db: LocalDb, userId: string): number {
   return removed;
 }
 
+
+/** For each shared account on this device: owner email and number of active members. */
+export function sharingSummary(db: LocalDb): Map<string, { ownerEmail: string; members: number }> {
+  const summary = new Map<string, { ownerEmail: string; members: number }>();
+  for (const m of db.select().from(accountMembers).where(isNull(accountMembers.deletedAt)).all()) {
+    const entry = summary.get(m.accountId) ?? { ownerEmail: '', members: 0 };
+    entry.members++;
+    if (m.role === 'owner') entry.ownerEmail = m.email;
+    summary.set(m.accountId, entry);
+  }
+  // An account counts as shared once someone besides the owner has joined.
+  for (const [id, entry] of summary) if (entry.members < 2) summary.delete(id);
+  return summary;
+}
