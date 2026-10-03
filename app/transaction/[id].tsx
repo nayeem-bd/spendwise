@@ -30,6 +30,7 @@ import { addDays, monthOf, todayISO, type Frequency } from '@/utils/date';
 import { localDigits } from '@/utils/digits';
 import { parseTaka, poishaToInput } from '@/utils/money';
 import { goBack } from '@/lib/nav';
+import { page, useWindowClass } from '@/components/layout';
 
 type TxType = 'expense' | 'income' | 'transfer';
 
@@ -50,6 +51,9 @@ export default function TransactionScreen() {
   const { t, lang } = useT();
   const f = useFormat();
   const displayName = useDisplayName();
+  const { width } = useWindowClass();
+  const twoColumns = width >= 760;
+  const segmentIcons = width >= 420; // labels get cut off next to icons on small phones
   const isNew = params.id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getTransaction(getDb(), params.id)));
 
@@ -97,7 +101,7 @@ export default function TransactionScreen() {
       ...(existing.note ? [[t('transaction.note'), existing.note] as [string, string]] : []),
     ];
     return (
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[page.narrow, styles.container]}>
         <Stack.Screen options={{ title: t('transaction.title') }} />
         <Text variant="displaySmall" style={[styles.amount, { color: existing.type === 'transfer' ? theme.colors.onSurface : moneyColors(theme.dark)[existing.type] }]}>
           {f.money(existing.amount)}
@@ -168,23 +172,32 @@ export default function TransactionScreen() {
 
   const color = type === 'transfer' ? theme.colors.onSurface : moneyColors(theme.dark)[type];
 
-  return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: isNew ? t(TITLES[type]) : t('transaction.edit') }} />
-      <SegmentedButtons
-        value={type}
-        onValueChange={(v) => changeType(v as TxType)}
-        buttons={[
-          { value: 'expense', label: t('type.expense'), icon: 'minus' },
-          { value: 'income', label: t('type.income'), icon: 'plus' },
-          ...(accounts.length > 1 ? [{ value: 'transfer', label: t('type.transfer'), icon: 'swap-horizontal' }] : []),
-        ]}
-      />
+  const typeSwitch = (
+    <SegmentedButtons
+      value={type}
+      onValueChange={(v) => changeType(v as TxType)}
+      buttons={[
+        { value: 'expense', label: t('type.expense'), icon: segmentIcons ? 'minus' : undefined },
+        { value: 'income', label: t('type.income'), icon: segmentIcons ? 'plus' : undefined },
+        ...(accounts.length > 1 ? [{ value: 'transfer', label: t('type.transfer'), icon: segmentIcons ? 'swap-horizontal' : undefined }] : []),
+      ]}
+    />
+  );
 
-      <Text variant="displaySmall" style={[styles.amount, { color }]} accessibilityLabel={t('transaction.amount')}>
-        ৳{localDigits(displayAmountText(amountText), lang)}
-      </Text>
+  const amountDisplay = (
+    <Text
+      variant="displaySmall"
+      style={[styles.amount, { color }]}
+      numberOfLines={1}
+      adjustsFontSizeToFit
+      accessibilityLabel={t('transaction.amount')}
+    >
+      ৳{localDigits(displayAmountText(amountText), lang)}
+    </Text>
+  );
 
+  const details = (
+    <>
       {type === 'transfer' ? (
         <>
           <Text variant="titleSmall">{t('transaction.from')}</Text>
@@ -246,9 +259,12 @@ export default function TransactionScreen() {
           </Button>
         )
       )}
+    </>
+  );
 
-      <AmountKeypad onKey={(key) => setAmountText((text) => applyKey(text, key))} />
-
+  const entry = (
+    <>
+      <AmountKeypad onKey={(key) => setAmountText((text) => applyKey(text, key))} onSubmit={save} />
       {error && <HelperText type="error">{error}</HelperText>}
       <Button mode="contained" onPress={save} contentStyle={styles.saveContent}>
         {t('common.save')}
@@ -257,6 +273,30 @@ export default function TransactionScreen() {
         <Button textColor="#C62828" onPress={() => setConfirmDelete(true)}>
           {t('transaction.delete')}
         </Button>
+      )}
+    </>
+  );
+
+  return (
+    <ScrollView contentContainerStyle={twoColumns ? [page.wide, styles.wide] : [page.narrow, styles.container]} keyboardShouldPersistTaps="handled">
+      <Stack.Screen options={{ title: isNew ? t(TITLES[type]) : t('transaction.edit') }} />
+      {twoColumns ? (
+        // Amount and keypad on the left, the details on the right.
+        <View style={styles.columns}>
+          <View style={[styles.column, styles.entryColumn]}>
+            {typeSwitch}
+            {amountDisplay}
+            {entry}
+          </View>
+          <View style={styles.column}>{details}</View>
+        </View>
+      ) : (
+        <>
+          {typeSwitch}
+          {amountDisplay}
+          {details}
+          {entry}
+        </>
       )}
       <ConfirmDialog
         visible={confirmDelete}
@@ -308,7 +348,11 @@ function AccountChips({
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 12, maxWidth: 560, width: '100%', alignSelf: 'center' },
+  container: { padding: 16, gap: 12 },
+  wide: { padding: 24 },
+  columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 32 },
+  column: { flex: 1, minWidth: 0, gap: 12 },
+  entryColumn: { maxWidth: 420 },
   amount: { textAlign: 'center', fontVariant: ['tabular-nums'], marginVertical: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },

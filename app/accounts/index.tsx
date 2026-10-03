@@ -11,6 +11,7 @@ import { useFormat } from '@/i18n/useFormat';
 import { useUser } from '@/lib/auth/store';
 import { sharingSummary } from '@/lib/db/repositories/sharing';
 import { addPoisha } from '@/utils/money';
+import { page } from '@/components/layout';
 
 export default function AccountsScreen() {
   const accounts = useLocalQuery(listAccountsWithBalance, ['accounts', 'transactions']);
@@ -49,7 +50,7 @@ export default function AccountsScreen() {
             onPress={() => router.push({ pathname: '/accounts/[id]', params: { id: item.id } })}
           />
         )}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[page.list, styles.list]}
       />
       <FAB icon="plus" label={t('account.new')} style={styles.fab} onPress={() => router.push({ pathname: '/accounts/[id]', params: { id: 'new' } })} />
     </View>
