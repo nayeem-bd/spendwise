@@ -36,7 +36,8 @@ Run `nvm use` first. Packages come from npmjs.org via the project `.npmrc` (the 
 - Unit tests: `npm test` (jest-expo)
 - Sync integration tests against local Supabase: `npm run test:integration` (needs `npx supabase start`; plain-Node jest config because jest-expo stubs `fetch`)
 - Health check: `npx expo-doctor`
-- Web build: `npx expo export -p web` → `dist/`
+- Web build (what Netlify runs): `npm run build:web` → `dist/` (expo export + PWA tags + Workbox service worker)
+- Android preview APK: `npx eas-cli@latest build -p android --profile preview` (env vars from the EAS `preview` environment)
 - Local backend: `npx supabase start` (needs Docker) · stop: `npx supabase stop`
 - Reset local DB (re-run migrations + seed): `npx supabase db reset`
 - Backend tests (pgTAP, RLS + triggers): `npx supabase test db`
