@@ -39,7 +39,8 @@
     "jest-expo": "^57.0.5",
     "patch-package": "^8.0.1",
     "supabase": "^2.119.0",
-    "typescript": "~6.0.3"
+    "typescript": "~6.0.3",
+    "workbox-cli": "^7.4.1"
   },
   "scripts": {
     "start": "expo start",
@@ -51,7 +52,8 @@
     "db:generate": "drizzle-kit generate",
     "supabase:types": "supabase gen types typescript --local > src/lib/database.types.ts",
     "postinstall": "node scripts/postinstall.mjs",
-    "test:integration": "sh -c 'eval \"$(supabase status -o env 2>/dev/null)\" && SUPABASE_TEST_URL=$API_URL SUPABASE_TEST_ANON_KEY=$ANON_KEY jest -c jest.integration.config.js'"
+    "test:integration": "sh -c 'eval \"$(supabase status -o env 2>/dev/null)\" && SUPABASE_TEST_URL=$API_URL SUPABASE_TEST_ANON_KEY=$ANON_KEY jest -c jest.integration.config.js'",
+    "build:web": "node scripts/build-web.mjs"
   },
   "private": true,
   "engines": {

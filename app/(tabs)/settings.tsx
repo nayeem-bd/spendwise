@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView } from 'react-native';
-import { Button, Dialog, Divider, List, Portal, Text } from 'react-native-paper';
+import { ScrollView, StyleSheet } from 'react-native';
+import { Button, Dialog, Divider, List, Portal, SegmentedButtons, Text } from 'react-native-paper';
 
 import { pendingChangeCount, signOut } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/store';
 import { syncNow } from '@/lib/sync/syncEngine';
+import { setThemePreference, useThemeStore, type ThemePreference } from '@/store/theme';
 
 export default function SettingsScreen() {
   const user = useUser();
+  const theme = useThemeStore((st) => st.preference);
   const [confirm, setConfirm] = useState<{ pending: number } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -51,6 +53,20 @@ export default function SettingsScreen() {
       </List.Section>
       <Divider />
       <List.Section>
+        <List.Subheader>Appearance</List.Subheader>
+        <SegmentedButtons
+          style={styles.segment}
+          value={theme}
+          onValueChange={(v) => setThemePreference(v as ThemePreference)}
+          buttons={[
+            { value: 'system', label: 'System', icon: 'theme-light-dark' },
+            { value: 'light', label: 'Light', icon: 'white-balance-sunny' },
+            { value: 'dark', label: 'Dark', icon: 'weather-night' },
+          ]}
+        />
+      </List.Section>
+      <Divider />
+      <List.Section>
         <List.Subheader>Account</List.Subheader>
         <List.Item title={user.email} description="Signed in" left={(props) => <List.Icon {...props} icon="account" />} />
         <List.Item
@@ -83,3 +99,7 @@ export default function SettingsScreen() {
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  segment: { marginHorizontal: 16 },
+});

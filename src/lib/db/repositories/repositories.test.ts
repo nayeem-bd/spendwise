@@ -6,6 +6,7 @@ import { defaultRowId } from '../defaults';
 import { outbox, transactions } from '../schema';
 import { seedDefaults } from '../seed';
 import type { LocalDb } from '../types';
+import { getMeta, setMeta } from '../meta';
 import { wipeLocalData } from '../wipe';
 import {
   createAccount,
@@ -161,6 +162,14 @@ describe('wipeLocalData', () => {
     expect(listAccounts(db)).toHaveLength(0);
     expect(listTransactions(db)).toHaveLength(0);
     expect(outboxRows(db)).toHaveLength(0);
+  });
+
+  it('keeps device preferences but not the signed-in user', () => {
+    setMeta(db, 'theme', 'dark');
+    setMeta(db, 'user', '{"id":"x","email":"x@test"}');
+    wipeLocalData(db);
+    expect(getMeta(db, 'theme')).toBe('dark');
+    expect(getMeta(db, 'user')).toBeUndefined();
   });
 });
 
