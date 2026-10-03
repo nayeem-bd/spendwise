@@ -1,13 +1,14 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { Button, Dialog, Divider, List, Portal, SegmentedButtons, Text } from 'react-native-paper';
+import { Button, Dialog, Divider, List, Portal, SegmentedButtons, Switch, Text } from 'react-native-paper';
 
 import { pendingChangeCount, signOut } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { listTransactions } from '@/lib/db/repositories/transactions';
 import { exportTransactions } from '@/lib/export/exportTransactions';
+import { canUseAppLock, setAppLock, useLockStore } from '@/lib/lock/lock';
 import { syncNow } from '@/lib/sync/syncEngine';
 import { showNotice } from '@/store/notice';
 import { setThemePreference, useThemeStore, type ThemePreference } from '@/store/theme';
@@ -18,6 +19,19 @@ export default function SettingsScreen() {
   const [confirm, setConfirm] = useState<{ pending: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const lockEnabled = useLockStore((st) => st.enabled);
+  const [lockAvailable, setLockAvailable] = useState(false);
+  useEffect(() => {
+    void canUseAppLock().then(setLockAvailable);
+  }, []);
+
+  const toggleLock = async (on: boolean) => {
+    try {
+      await setAppLock(on);
+    } catch (e) {
+      showNotice(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   const exportAll = async () => {
     setExporting(true);
@@ -94,6 +108,20 @@ export default function SettingsScreen() {
           ]}
         />
       </List.Section>
+      {lockAvailable && (
+        <>
+          <Divider />
+          <List.Section>
+            <List.Subheader>Security</List.Subheader>
+            <List.Item
+              title="App lock"
+              description="Ask for Face ID, fingerprint or device PIN when opening SpendWise"
+              left={(props) => <List.Icon {...props} icon="lock" />}
+              right={() => <Switch value={lockEnabled} onValueChange={(v) => void toggleLock(v)} />}
+            />
+          </List.Section>
+        </>
+      )}
       <Divider />
       <List.Section>
         <List.Subheader>Account</List.Subheader>
