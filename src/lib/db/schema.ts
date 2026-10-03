@@ -88,6 +88,21 @@ export const attachments = sqliteTable(
   (t) => [index('attachments_transaction_idx').on(t.transactionId)],
 );
 
+/**
+ * Who shares an account (pulled only: written on the server by RPCs, never
+ * pushed from the device). role 'owner' | 'member'.
+ */
+export const accountMembers = sqliteTable(
+  'account_members',
+  {
+    ...syncColumns,
+    accountId: text('account_id').notNull(),
+    email: text('email').notNull(),
+    role: text('role').$type<'owner' | 'member'>().notNull(),
+  },
+  (t) => [index('account_members_account_idx').on(t.accountId)],
+);
+
 // ---- Local-only tables (never synced) ----
 
 /**
@@ -134,6 +149,7 @@ export const syncedTables = {
   budgets,
   recurring_rules: recurringRules,
   attachments,
+  account_members: accountMembers,
 } as const;
 
 export type SyncedTableName = keyof typeof syncedTables;
@@ -145,3 +161,4 @@ export type Budget = typeof budgets.$inferSelect;
 export type RecurringRule = typeof recurringRules.$inferSelect;
 export type OutboxEntry = typeof outbox.$inferSelect;
 export type Attachment = typeof attachments.$inferSelect;
+export type AccountMember = typeof accountMembers.$inferSelect;
