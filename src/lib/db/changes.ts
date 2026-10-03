@@ -4,7 +4,7 @@ import type { SyncedTableName } from './schema';
 // from week 3, the sync pull), which calls notifyChanged after commit.
 // useLocalQuery listens so screens re-read the tables they depend on.
 
-export type ChangedTable = SyncedTableName | 'outbox';
+export type ChangedTable = SyncedTableName | 'outbox' | 'attachment_files';
 type Listener = (tables: ReadonlySet<ChangedTable>) => void;
 
 const listeners = new Set<Listener>();

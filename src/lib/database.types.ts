@@ -36,6 +36,25 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"attachments": {
+                  Row: {
+                    "content_type": string,"created_at": string,"deleted_at": string | null,"id": string,"server_seq": number | null,"size_bytes": number,"storage_path": string,"transaction_id": string,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "content_type"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"server_seq"?: number | null,"size_bytes": number,"storage_path": string,"transaction_id": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "content_type"?: string,"created_at"?: string,"deleted_at"?: string | null,"id"?: string,"server_seq"?: number | null,"size_bytes"?: number,"storage_path"?: string,"transaction_id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "attachments_transaction_id_fkey"
+      columns: ["transaction_id"]
+isOneToOne: false
+      referencedRelation: "transactions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"budgets": {
                   Row: {
                     "amount": number,"category_id": string | null,"created_at": string,"deleted_at": string | null,"id": string,"month": string,"server_seq": number | null,"updated_at": string,"user_id": string

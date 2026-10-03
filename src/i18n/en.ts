@@ -203,6 +203,16 @@ export const en = {
   'sync.needsLogin': 'Log in to sync',
   'sync.reauthMessage': 'Your login expired. Enter your password to sync again. Nothing on this device is lost.',
 
+  // Receipts
+  'receipt.title': 'Receipt',
+  'receipt.camera': 'Camera',
+  'receipt.library': 'Photos',
+  'receipt.open': 'Open receipt photo',
+  'receipt.delete': 'Delete photo',
+  'receipt.deleteTitle': 'Delete photo?',
+  'receipt.deleteMessage': 'The photo is removed from this transaction on all your devices.',
+  'receipt.offline': 'Connect to see',
+
   // Lock, reminder, update
   'lock.locked': 'SpendWise is locked',
   'lock.unlock': 'Unlock',
@@ -227,6 +237,10 @@ export const en = {
   'error.You need at least one account': 'You need at least one account',
   'error.This repeating transaction no longer exists': 'This repeating transaction no longer exists',
   'error.Nothing to export': 'Nothing to export',
+  'error.That photo could not be read': 'That photo could not be read',
+  'error.That photo is too large': 'That photo is too large',
+  'error.Allow camera access for SpendWise in your phone settings to take receipt photos.':
+    'Allow camera access for SpendWise in your phone settings to take receipt photos.',
   'error.Sharing is not available on this device': 'Sharing is not available on this device',
   "error.Can't reach the server. Check your internet connection.": "Can't reach the server. Check your internet connection.",
   'error.That login belongs to a different account': 'That login belongs to a different account',

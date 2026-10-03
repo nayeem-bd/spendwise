@@ -188,6 +188,15 @@ export const bn: Record<StringKey, string> = {
   'sync.needsLogin': 'সিঙ্ক করতে লগ ইন করুন',
   'sync.reauthMessage': 'আপনার লগ ইনের মেয়াদ শেষ। আবার সিঙ্ক করতে পাসওয়ার্ড দিন। এই ডিভাইসের কিছুই হারাবে না।',
 
+  'receipt.title': 'রসিদ',
+  'receipt.camera': 'ক্যামেরা',
+  'receipt.library': 'ছবি',
+  'receipt.open': 'রসিদের ছবি খুলুন',
+  'receipt.delete': 'ছবি মুছুন',
+  'receipt.deleteTitle': 'ছবি মুছবেন?',
+  'receipt.deleteMessage': 'আপনার সব ডিভাইসে এই লেনদেন থেকে ছবিটি মুছে যাবে।',
+  'receipt.offline': 'দেখতে ইন্টারনেট লাগবে',
+
   'lock.locked': 'SpendWise লক করা আছে',
   'lock.unlock': 'আনলক',
   'lock.prompt': 'SpendWise আনলক করুন',
@@ -210,6 +219,10 @@ export const bn: Record<StringKey, string> = {
   'error.You need at least one account': 'অন্তত একটি অ্যাকাউন্ট থাকতে হবে',
   'error.This repeating transaction no longer exists': 'এই নিয়মিত লেনদেনটি আর নেই',
   'error.Nothing to export': 'এক্সপোর্ট করার মতো কিছু নেই',
+  'error.That photo could not be read': 'ছবিটি পড়া যায়নি',
+  'error.That photo is too large': 'ছবিটি খুব বড়',
+  'error.Allow camera access for SpendWise in your phone settings to take receipt photos.':
+    'রসিদের ছবি তুলতে ফোনের সেটিংসে SpendWise-এর ক্যামেরা অনুমতি দিন।',
   'error.Sharing is not available on this device': 'এই ডিভাইসে শেয়ার করা যাচ্ছে না',
   "error.Can't reach the server. Check your internet connection.": 'সার্ভারে পৌঁছানো যাচ্ছে না। ইন্টারনেট সংযোগ দেখুন।',
   'error.That login belongs to a different account': 'এই লগ ইনটি অন্য একটি অ্যাকাউন্টের',
