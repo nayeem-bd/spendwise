@@ -11,6 +11,7 @@ import { initAuth } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/auth/store';
 import { DatabaseGate } from '@/lib/db/DatabaseGate';
 import { initAppLock } from '@/lib/lock/lock';
+import { useReminders } from '@/lib/reminder/useReminders';
 import { LockScreen } from '@/components/LockScreen';
 import { NoticeSnackbar } from '@/components/NoticeSnackbar';
 import { UpdateSnackbar } from '@/components/UpdateSnackbar';
@@ -53,6 +54,8 @@ function AppStack() {
   useEffect(() => {
     if (userId) startSync(userId); // signOut() stops it before wiping
   }, [userId]);
+
+  useReminders(status === 'signedIn');
 
   if (status === 'loading') return null;
   const signedIn = status === 'signedIn';

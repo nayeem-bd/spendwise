@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import { Button, Dialog, Divider, List, Portal, SegmentedButtons, Switch, Text } from 'react-native-paper';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Button, Chip, Dialog, Divider, List, Portal, SegmentedButtons, Switch, Text } from 'react-native-paper';
 
 import { pendingChangeCount, signOut } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/store';
@@ -9,6 +9,7 @@ import { getDb } from '@/lib/db/client';
 import { listTransactions } from '@/lib/db/repositories/transactions';
 import { exportTransactions } from '@/lib/export/exportTransactions';
 import { canUseAppLock, setAppLock, useLockStore } from '@/lib/lock/lock';
+import { REMINDER_TIMES, remindersSupported, setReminder, useReminderStore } from '@/lib/reminder/reminder';
 import { syncNow } from '@/lib/sync/syncEngine';
 import { showNotice } from '@/store/notice';
 import { setThemePreference, useThemeStore, type ThemePreference } from '@/store/theme';
@@ -24,6 +25,15 @@ export default function SettingsScreen() {
   useEffect(() => {
     void canUseAppLock().then(setLockAvailable);
   }, []);
+
+  const reminder = useReminderStore();
+  const changeReminder = async (prefs: { enabled?: boolean; minutes?: number }) => {
+    try {
+      await setReminder(prefs);
+    } catch (e) {
+      showNotice(e instanceof Error ? e.message : String(e));
+    }
+  };
 
   const toggleLock = async (on: boolean) => {
     try {
@@ -108,6 +118,29 @@ export default function SettingsScreen() {
           ]}
         />
       </List.Section>
+      {remindersSupported && (
+        <>
+          <Divider />
+          <List.Section>
+            <List.Subheader>Reminder</List.Subheader>
+            <List.Item
+              title="Daily reminder"
+              description="Only on days you haven't logged anything"
+              left={(props) => <List.Icon {...props} icon="bell-outline" />}
+              right={() => <Switch value={reminder.enabled} onValueChange={(v) => void changeReminder({ enabled: v })} />}
+            />
+            {reminder.enabled && (
+              <View style={styles.chips}>
+                {REMINDER_TIMES.map((m) => (
+                  <Chip key={m} selected={reminder.minutes === m} showSelectedOverlay onPress={() => void changeReminder({ minutes: m })}>
+                    {`${m / 60 - 12} PM`}
+                  </Chip>
+                ))}
+              </View>
+            )}
+          </List.Section>
+        </>
+      )}
       {lockAvailable && (
         <>
           <Divider />
@@ -159,4 +192,5 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   segment: { marginHorizontal: 16 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
 });
