@@ -4,24 +4,28 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { FAB, List, SegmentedButtons } from 'react-native-paper';
 
 import { IconBadge } from '@/components/IconBadge';
+import { useT } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
 import { listCategories } from '@/lib/db/repositories/categories';
 import type { CategoryType } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 
 export default function CategoriesScreen() {
   const [type, setType] = useState<CategoryType>('expense');
+  const { t } = useT();
+  const name = useDisplayName();
   const items = useLocalQuery((db) => listCategories(db, type), ['categories'], [type]);
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: 'Categories' }} />
+      <Stack.Screen options={{ title: t('settings.categories') }} />
       <SegmentedButtons
         style={styles.segment}
         value={type}
         onValueChange={(v) => setType(v as CategoryType)}
         buttons={[
-          { value: 'expense', label: 'Expense' },
-          { value: 'income', label: 'Income' },
+          { value: 'expense', label: t('type.expense') },
+          { value: 'income', label: t('type.income') },
         ]}
       />
       <FlatList
@@ -29,7 +33,7 @@ export default function CategoriesScreen() {
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => (
           <List.Item
-            title={item.name}
+            title={name(item.id, item.name)}
             left={() => <View style={styles.icon}><IconBadge icon={item.icon} color={item.color} /></View>}
             onPress={() => router.push({ pathname: '/categories/[id]', params: { id: item.id } })}
           />
@@ -38,7 +42,7 @@ export default function CategoriesScreen() {
       />
       <FAB
         icon="plus"
-        label="New category"
+        label={t('category.new')}
         style={styles.fab}
         onPress={() => router.push({ pathname: '/categories/[id]', params: { id: 'new', type } })}
       />

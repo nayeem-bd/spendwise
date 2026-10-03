@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { create } from 'zustand';
 
+import { translate } from '@/i18n/i18n';
 import { getDb } from '@/lib/db/client';
 import { getMeta, setMeta } from '@/lib/db/meta';
 import { transactions } from '@/lib/db/schema';
@@ -74,7 +75,7 @@ export function refreshReminders(): Promise<void> {
       for (const day of days) {
         await Notifications.scheduleNotificationAsync({
           identifier: `${ID_PREFIX}${day}`,
-          content: { title: 'SpendWise', body: "Did you log today's spending?" },
+          content: { title: 'SpendWise', body: translate('reminder.body') },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: atLocalTime(day, minutes), channelId: CHANNEL },
         });
       }
@@ -93,7 +94,7 @@ export async function setReminder(prefs: Partial<ReminderPrefs>): Promise<void> 
   if (prefs.enabled) {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync(CHANNEL, {
-        name: 'Daily reminder',
+        name: translate('settings.dailyReminder'),
         importance: Notifications.AndroidImportance.DEFAULT,
       });
     }

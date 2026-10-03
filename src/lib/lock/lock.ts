@@ -2,6 +2,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { AppState, Platform } from 'react-native';
 import { create } from 'zustand';
 
+import { translate } from '@/i18n/i18n';
 import { getDb } from '@/lib/db/client';
 import { getMeta, setMeta } from '@/lib/db/meta';
 
@@ -59,13 +60,13 @@ export function initAppLock(): void {
 }
 
 export async function unlock(): Promise<void> {
-  if (await authenticate('Unlock SpendWise')) useLockStore.setState({ locked: false });
+  if (await authenticate(translate('lock.prompt'))) useLockStore.setState({ locked: false });
 }
 
 /** Turning the lock on or off both require authenticating first. Returns the new state. */
 export async function setAppLock(enabled: boolean): Promise<boolean> {
   if (enabled && !(await canUseAppLock())) throw new Error('Set up a screen lock (PIN, fingerprint or Face ID) on this device first.');
-  if (!(await authenticate(enabled ? 'Turn on App lock' : 'Turn off App lock'))) return useLockStore.getState().enabled;
+  if (!(await authenticate(translate(enabled ? 'lock.turnOn' : 'lock.turnOff')))) return useLockStore.getState().enabled;
   setMeta(getDb(), KEY, enabled ? 'on' : 'off');
   useLockStore.setState({ enabled });
   return enabled;

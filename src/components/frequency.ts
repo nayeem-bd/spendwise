@@ -1,8 +1,9 @@
+import type { StringKey } from '@/i18n/i18n';
 import type { Frequency } from '@/utils/date';
 
-export const FREQUENCY_LABEL: Record<Frequency, string> = {
-  daily: 'Daily',
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  yearly: 'Yearly',
+export const FREQUENCY_KEY: Record<Frequency, StringKey> = {
+  daily: 'repeat.daily',
+  weekly: 'repeat.weekly',
+  monthly: 'repeat.monthly',
+  yearly: 'repeat.yearly',
 };

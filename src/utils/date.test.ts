@@ -66,3 +66,12 @@ describe('nextOccurrence', () => {
     expect(nextOccurrence(iso, frequency, anchor)).toBe(expected);
   });
 });
+
+describe('Bangla dates', () => {
+  it('formats days and months with Bangla names and digits', () => {
+    expect(formatDay('2026-10-03', '2026-10-03', 'bn')).toBe('আজ');
+    expect(formatDay('2026-10-02', '2026-10-03', 'bn')).toBe('গতকাল');
+    expect(formatDay('2026-09-26', '2026-10-03', 'bn')).toBe('শনি, ২৬ সেপ্টে ২০২৬');
+    expect(formatMonth('2026-10', 'bn')).toBe('অক্টো ২০২৬');
+  });
+});

@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 
+import { useT } from '@/i18n/i18n';
 import { unlock, useLockStore } from '@/lib/lock/lock';
 
 /**
@@ -12,6 +13,7 @@ import { unlock, useLockStore } from '@/lib/lock/lock';
 export function LockScreen() {
   const locked = useLockStore((s) => s.locked);
   const theme = useTheme();
+  const { t } = useT();
 
   useEffect(() => {
     if (locked) void unlock(); // prompt straight away
@@ -21,9 +23,9 @@ export function LockScreen() {
     <Modal visible={locked} animationType="none" presentationStyle="fullScreen" onRequestClose={() => undefined}>
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <MaterialCommunityIcons name="lock" size={56} color={theme.colors.primary} />
-        <Text variant="headlineSmall">SpendWise is locked</Text>
+        <Text variant="headlineSmall">{t('lock.locked')}</Text>
         <Button mode="contained" icon="fingerprint" onPress={() => void unlock()}>
-          Unlock
+          {t('lock.unlock')}
         </Button>
       </View>
     </Modal>

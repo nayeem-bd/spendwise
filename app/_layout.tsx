@@ -10,6 +10,8 @@ import { PaperProvider } from 'react-native-paper';
 import { initAuth } from '@/lib/auth/auth';
 import { useAuthStore } from '@/lib/auth/store';
 import { DatabaseGate } from '@/lib/db/DatabaseGate';
+import { useT } from '@/i18n/i18n';
+import { loadLanguage } from '@/i18n/language';
 import { initAppLock } from '@/lib/lock/lock';
 import { useReminders } from '@/lib/reminder/useReminders';
 import { LockScreen } from '@/components/LockScreen';
@@ -48,6 +50,7 @@ function AppStack() {
   const userId = useAuthStore((s) => s.user?.id);
   useEffect(() => {
     loadThemePreference();
+    loadLanguage();
     initAppLock();
     initAuth();
   }, []);
@@ -56,6 +59,7 @@ function AppStack() {
   }, [userId]);
 
   useReminders(status === 'signedIn');
+  const { t } = useT();
 
   if (status === 'loading') return null;
   const signedIn = status === 'signedIn';
@@ -64,7 +68,7 @@ function AppStack() {
     <Stack>
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="transaction/[id]" options={{ presentation: 'modal', title: 'Transaction' }} />
+        <Stack.Screen name="transaction/[id]" options={{ presentation: 'modal', title: t('transaction.title') }} />
         <Stack.Screen name="categories/index" />
         <Stack.Screen name="categories/[id]" />
         <Stack.Screen name="accounts/index" />

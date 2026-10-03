@@ -17,27 +17,34 @@ import { createRecurring, materializeRecurring } from '@/lib/db/repositories/rec
 import { deleteTransaction, getTransaction, saveTransaction, type TransactionInput } from '@/lib/db/repositories/transactions';
 import type { Account } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
+import { translate, translateError, useT, type StringKey } from '@/i18n/i18n';
+import { useDisplayName } from '@/i18n/names';
+import { useFormat } from '@/i18n/useFormat';
 import { showNotice } from '@/store/notice';
 import { moneyColors } from '@/theme';
-import { addDays, formatDay, monthOf, todayISO, type Frequency } from '@/utils/date';
-import { formatBDT, parseTaka, poishaToInput } from '@/utils/money';
+import { addDays, monthOf, todayISO, type Frequency } from '@/utils/date';
+import { localDigits } from '@/utils/digits';
+import { parseTaka, poishaToInput } from '@/utils/money';
 
 type TxType = 'expense' | 'income' | 'transfer';
 
-const REPEAT_OPTIONS: { value: Frequency | 'never'; label: string }[] = [
-  { value: 'never', label: 'Never' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'yearly', label: 'Yearly' },
+const REPEAT_OPTIONS: { value: Frequency | 'never'; label: StringKey }[] = [
+  { value: 'never', label: 'repeat.never' },
+  { value: 'daily', label: 'repeat.daily' },
+  { value: 'weekly', label: 'repeat.weekly' },
+  { value: 'monthly', label: 'repeat.monthly' },
+  { value: 'yearly', label: 'repeat.yearly' },
 ];
 
-const TITLES: Record<TxType, string> = { expense: 'Add expense', income: 'Add income', transfer: 'Add transfer' };
+const TITLES: Record<TxType, StringKey> = { expense: 'transaction.addExpense', income: 'transaction.addIncome', transfer: 'transaction.addTransfer' };
 
 export default function TransactionScreen() {
   const params = useLocalSearchParams<{ id: string; type?: TxType }>();
   const user = useUser();
   const theme = useTheme();
+  const { t, lang } = useT();
+  const f = useFormat();
+  const displayName = useDisplayName();
   const isNew = params.id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getTransaction(getDb(), params.id)));
 
@@ -62,7 +69,7 @@ export default function TransactionScreen() {
   const selectedToAccountId = toAccountId ?? accounts.find((a) => a.id !== selectedAccountId)?.id ?? null;
 
   if (!isNew && (!existing || existing.deletedAt)) {
-    return <Text style={styles.missing}>This transaction no longer exists.</Text>;
+    return <Text style={styles.missing}>{t('transaction.missing')}</Text>;
   }
 
   const changeType = (next: TxType) => {
@@ -73,7 +80,7 @@ export default function TransactionScreen() {
   const save = () => {
     const amount = parseTaka(amountText);
     if (amount === null || amount <= 0) {
-      setError('Enter an amount above ৳0');
+      setError(translate('error.Enter an amount above ৳0'));
       return;
     }
     const common = { amount, accountId: selectedAccountId ?? '', note, occurredOn };
@@ -88,7 +95,7 @@ export default function TransactionScreen() {
         // The rule creates this occurrence (and later ones) with its own ids.
         createRecurring(getDb(), user.id, input, repeat);
         materializeRecurring(getDb(), todayISO());
-        if (occurredOn > todayISO()) showNotice(`Repeats ${repeat}, starting ${formatDay(occurredOn)}`);
+        if (occurredOn > todayISO()) showNotice(t('recurring.startsLater', { frequency: t(`repeat.${repeat}`), day: f.day(occurredOn) }));
       } else {
         saveTransaction(getDb(), user.id, input, isNew ? undefined : params.id);
       }
@@ -96,7 +103,7 @@ export default function TransactionScreen() {
       if (crossed.length) showNotice(crossed.map(describeBudgetAlert).join('\n'));
       router.back();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(translateError(e));
     }
   };
 
@@ -106,58 +113,65 @@ export default function TransactionScreen() {
     router.back();
   };
 
+  const describeBudgetAlert = (s: BudgetStatus) => {
+    const what = s.categoryId === null ? t('budget.monthly') : displayName(s.categoryId, s.name);
+    return s.level === 'over'
+      ? t('budget.alertOver', { name: what, spent: f.money(s.spent), amount: f.money(s.amount) })
+      : t('budget.alertWarning', { name: what, percent: Math.round(s.ratio * 100) });
+  };
+
   const color = type === 'transfer' ? theme.colors.onSurface : moneyColors(theme.dark)[type];
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: isNew ? TITLES[type] : 'Edit transaction' }} />
+      <Stack.Screen options={{ title: isNew ? t(TITLES[type]) : t('transaction.edit') }} />
       <SegmentedButtons
         value={type}
         onValueChange={(v) => changeType(v as TxType)}
         buttons={[
-          { value: 'expense', label: 'Expense', icon: 'minus' },
-          { value: 'income', label: 'Income', icon: 'plus' },
-          ...(accounts.length > 1 ? [{ value: 'transfer', label: 'Transfer', icon: 'swap-horizontal' }] : []),
+          { value: 'expense', label: t('type.expense'), icon: 'minus' },
+          { value: 'income', label: t('type.income'), icon: 'plus' },
+          ...(accounts.length > 1 ? [{ value: 'transfer', label: t('type.transfer'), icon: 'swap-horizontal' }] : []),
         ]}
       />
 
-      <Text variant="displaySmall" style={[styles.amount, { color }]} accessibilityLabel="Amount">
-        ৳{displayAmountText(amountText)}
+      <Text variant="displaySmall" style={[styles.amount, { color }]} accessibilityLabel={t('transaction.amount')}>
+        ৳{localDigits(displayAmountText(amountText), lang)}
       </Text>
 
       {type === 'transfer' ? (
         <>
-          <Text variant="titleSmall">From</Text>
+          <Text variant="titleSmall">{t('transaction.from')}</Text>
           <AccountChips accounts={accounts} value={selectedAccountId} onChange={setAccountId} />
-          <Text variant="titleSmall">To</Text>
+          <Text variant="titleSmall">{t('transaction.to')}</Text>
           <AccountChips accounts={accounts} value={selectedToAccountId} onChange={setToAccountId} disabledId={selectedAccountId} />
         </>
       ) : (
         <>
-          <Text variant="titleSmall">Category</Text>
+          <Text variant="titleSmall">{t('transaction.category')}</Text>
           <CategoryGrid categories={categories} value={categoryId} onChange={setCategoryId} />
-          <Text variant="titleSmall">Account</Text>
+          <Text variant="titleSmall">{t('transaction.account')}</Text>
           <AccountChips accounts={accounts} value={selectedAccountId} onChange={setAccountId} />
         </>
       )}
 
       <View style={styles.dateRow}>
-        <IconButton icon="chevron-left" accessibilityLabel="Previous day" onPress={() => setOccurredOn(addDays(occurredOn, -1))} />
+        <IconButton icon="chevron-left" accessibilityLabel={t('transaction.previousDay')} onPress={() => setOccurredOn(addDays(occurredOn, -1))} />
         <Button icon="calendar" onPress={() => setOccurredOn(todayISO())}>
-          {formatDay(occurredOn)}
+          {f.day(occurredOn)}
         </Button>
-        <IconButton icon="chevron-right" accessibilityLabel="Next day" onPress={() => setOccurredOn(addDays(occurredOn, 1))} />
+        <IconButton icon="chevron-right" accessibilityLabel={t('transaction.nextDay')} onPress={() => setOccurredOn(addDays(occurredOn, 1))} />
       </View>
 
-      <TextInput label="Note (optional)" mode="outlined" value={note} onChangeText={setNote} maxLength={200} />
+      <TextInput label={t('transaction.note')} mode="outlined" value={note} onChangeText={setNote} maxLength={200} />
 
       {isNew ? (
         <>
-          <Text variant="titleSmall">Repeat</Text>
+          <Text variant="titleSmall">{t('transaction.repeat')}</Text>
           <View style={styles.chips}>
             {REPEAT_OPTIONS.map((o) => (
               <Chip key={o.value} selected={repeat === o.value} showSelectedOverlay onPress={() => setRepeat(o.value)}>
-                {o.label}
+                {t(o.label)}
               </Chip>
             ))}
           </View>
@@ -165,27 +179,27 @@ export default function TransactionScreen() {
       ) : (
         existing?.recurringId && (
           <Button icon="repeat" onPress={() => router.push({ pathname: '/recurring/[id]', params: { id: existing.recurringId! } })}>
-            Part of a repeating transaction
+            {t('transaction.partOfRecurring')}
           </Button>
         )
       )}
 
-      <AmountKeypad onKey={(key) => setAmountText((t) => applyKey(t, key))} />
+      <AmountKeypad onKey={(key) => setAmountText((text) => applyKey(text, key))} />
 
       {error && <HelperText type="error">{error}</HelperText>}
       <Button mode="contained" onPress={save} contentStyle={styles.saveContent}>
-        Save
+        {t('common.save')}
       </Button>
       {!isNew && (
         <Button textColor="#C62828" onPress={() => setConfirmDelete(true)}>
-          Delete transaction
+          {t('transaction.delete')}
         </Button>
       )}
       <ConfirmDialog
         visible={confirmDelete}
-        title="Delete transaction?"
-        message="This removes it from your history on all your devices."
-        confirmLabel="Delete"
+        title={t('transaction.deleteTitle')}
+        message={t('transaction.deleteMessage')}
+        confirmLabel={t('common.delete')}
         onConfirm={remove}
         onDismiss={() => setConfirmDelete(false)}
       />
@@ -193,12 +207,6 @@ export default function TransactionScreen() {
   );
 }
 
-function describeBudgetAlert(s: BudgetStatus): string {
-  const what = s.categoryId === null ? 'Monthly budget' : s.name;
-  return s.level === 'over'
-    ? `${what}: over budget (${formatBDT(s.spent)} of ${formatBDT(s.amount)})`
-    : `${what}: ${Math.round(s.ratio * 100)}% of budget used`;
-}
 
 function AccountChips({
   accounts,
@@ -211,6 +219,7 @@ function AccountChips({
   onChange: (id: string) => void;
   disabledId?: string | null;
 }) {
+  const name = useDisplayName();
   return (
     <View style={styles.chips}>
       {accounts.map((a) => (
@@ -221,7 +230,7 @@ function AccountChips({
           disabled={a.id === disabledId}
           onPress={() => onChange(a.id)}
         >
-          {a.name}
+          {name(a.id, a.name)}
         </Chip>
       ))}
     </View>
