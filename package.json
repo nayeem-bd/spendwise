@@ -50,7 +50,7 @@
     "test": "jest",
     "db:generate": "drizzle-kit generate",
     "supabase:types": "supabase gen types typescript --local > src/lib/database.types.ts",
-    "postinstall": "patch-package",
+    "postinstall": "node scripts/postinstall.mjs",
     "test:integration": "sh -c 'eval \"$(supabase status -o env 2>/dev/null)\" && SUPABASE_TEST_URL=$API_URL SUPABASE_TEST_ANON_KEY=$ANON_KEY jest -c jest.integration.config.js'"
   },
   "private": true,
