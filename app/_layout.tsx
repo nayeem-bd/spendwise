@@ -68,7 +68,7 @@ function AppStack() {
   const signedIn = status === 'signedIn';
 
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShadowVisible: false, headerTitleStyle: styles.headerTitle }}>
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="transaction/[id]" options={{ presentation: 'modal', title: t('transaction.title') }} />
@@ -90,4 +90,5 @@ function AppStack() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  headerTitle: { fontWeight: '600' },
 });

@@ -6,32 +6,39 @@ import { useFormat } from '@/i18n/useFormat';
 import type { MonthTotals as Totals } from '@/lib/db/repositories/summary';
 import { moneyColors } from '@/theme';
 
-/** Income, expense and balance tiles for a month. `dense` for the top of lists. */
-export function MonthTotals({ totals, dense = false }: { totals: Totals; dense?: boolean }) {
+/**
+ * Income, expense and balance tiles for a month. `dense` for the top of lists;
+ * `onCard` when they sit inside a Section card rather than on the background.
+ */
+export function MonthTotals({ totals, dense = false, onCard = false }: { totals: Totals; dense?: boolean; onCard?: boolean }) {
   const theme = useTheme();
   const { t } = useT();
   const f = useFormat();
   const colors = moneyColors(theme.dark);
+  const tile = onCard ? theme.colors.elevation.level2 : theme.colors.elevation.level1;
   return (
     <View style={[styles.row, dense && styles.denseRow]}>
-      <Total label={t('type.income')} icon="arrow-down" value={f.money(totals.income)} color={colors.income} dense={dense} />
-      <Total label={t('type.expense')} icon="arrow-up" value={f.money(totals.expense)} color={colors.expense} dense={dense} />
+      <Total label={t('type.income')} icon="arrow-down" value={f.money(totals.income)} color={colors.income} dense={dense} tile={tile} />
+      <Total label={t('type.expense')} icon="arrow-up" value={f.money(totals.expense)} color={colors.expense} dense={dense} tile={tile} />
       <Total
         label={t('home.balance')}
         icon="scale-balance"
         value={f.money(totals.balance)}
         color={totals.balance < 0 ? colors.expense : theme.colors.onSurface}
         dense={dense}
+        tile={tile}
       />
     </View>
   );
 }
 
-function Total({ label, icon, value, color, dense }: { label: string; icon: string; value: string; color: string; dense: boolean }) {
+type TotalProps = { label: string; icon: string; value: string; color: string; dense: boolean; tile: string };
+
+function Total({ label, icon, value, color, dense, tile }: TotalProps) {
   const theme = useTheme();
   return (
     <View
-      style={[styles.total, dense && styles.denseTotal, { backgroundColor: theme.colors.elevation.level2 }]}
+      style={[styles.total, dense && styles.denseTotal, { backgroundColor: tile }]}
       accessible
       accessibilityLabel={`${label} ${value}`}
     >
@@ -51,7 +58,7 @@ function Total({ label, icon, value, color, dense }: { label: string; icon: stri
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
   denseRow: { paddingTop: 0, paddingBottom: 8 },
-  total: { flex: 1, minWidth: 0, gap: 4, padding: 12, borderRadius: 12 },
+  total: { flex: 1, minWidth: 0, gap: 4, padding: 12, borderRadius: 14 },
   denseTotal: { paddingVertical: 8, gap: 2 },
   label: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   icon: { margin: 0, width: 18, height: 18 },

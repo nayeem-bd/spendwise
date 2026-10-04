@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Chip, Dialog, Divider, List, Portal, SegmentedButtons, Switch, Text, useTheme } from 'react-native-paper';
+import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Button, Chip, Dialog, List, Portal, SegmentedButtons, Switch, Text, useTheme } from 'react-native-paper';
 
 import { translateError, useT } from '@/i18n/i18n';
 import { setLanguage } from '@/i18n/language';
@@ -12,6 +12,7 @@ import { getDb } from '@/lib/db/client';
 import { listTransactions } from '@/lib/db/repositories/transactions';
 import { exportTransactions } from '@/lib/export/exportTransactions';
 import { page } from '@/components/layout';
+import { ROW_ICON_INSET, rowIcon, Section } from '@/components/Section';
 import { canUseAppLock, setAppLock, useLockStore } from '@/lib/lock/lock';
 import { REMINDER_TIMES, remindersSupported, setReminder, useReminderStore } from '@/lib/reminder/reminder';
 import { syncNow } from '@/lib/sync/syncEngine';
@@ -82,38 +83,35 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={[page.list, styles.content]}>
-      <List.Section>
-        <List.Subheader>{t('settings.manage')}</List.Subheader>
+      <Section title={t('settings.manage')} separators inset={ROW_ICON_INSET}>
         <List.Item
           title={t('settings.categories')}
-          left={(props) => <List.Icon {...props} icon="shape" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          left={rowIcon('shape', '#F57C00')}
+          right={chevron}
           onPress={() => router.push('/categories')}
         />
         <List.Item
           title={t('settings.accounts')}
-          left={(props) => <List.Icon {...props} icon="wallet" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          left={rowIcon('wallet', '#1976D2')}
+          right={chevron}
           onPress={() => router.push('/accounts')}
         />
-        <JoinSharedAccount />
+        <JoinSharedAccount left={rowIcon('account-multiple-plus', '#00897B')} />
         <List.Item
           title={t('recurring.title')}
-          left={(props) => <List.Icon {...props} icon="repeat" />}
-          right={(props) => <List.Icon {...props} icon="chevron-right" />}
+          left={rowIcon('repeat', '#7B1FA2')}
+          right={chevron}
           onPress={() => router.push('/recurring')}
         />
         <List.Item
           title={t('settings.export')}
           description={exporting ? t('settings.exportPreparing') : t('settings.exportHint')}
-          left={(props) => <List.Icon {...props} icon="file-delimited-outline" />}
+          left={rowIcon('file-delimited-outline', '#388E3C')}
           onPress={exportAll}
           disabled={exporting}
         />
-      </List.Section>
-      <Divider />
-      <List.Section>
-        <List.Subheader>{t('settings.appearance')}</List.Subheader>
+      </Section>
+      <Section title={t('settings.appearance')}>
         <SegmentedButtons
           style={styles.segment}
           value={theme}
@@ -124,10 +122,8 @@ export default function SettingsScreen() {
             { value: 'dark', label: t('settings.themeDark'), icon: 'weather-night' },
           ]}
         />
-      </List.Section>
-      <Divider />
-      <List.Section>
-        <List.Subheader>{t('settings.language')}</List.Subheader>
+      </Section>
+      <Section title={t('settings.language')}>
         <SegmentedButtons
           style={styles.segment}
           value={lang}
@@ -137,56 +133,47 @@ export default function SettingsScreen() {
             { value: 'bn', label: 'বাংলা' },
           ]}
         />
-      </List.Section>
+      </Section>
       {remindersSupported && (
-        <>
-          <Divider />
-          <List.Section>
-            <List.Subheader>{t('settings.reminder')}</List.Subheader>
-            <List.Item
-              title={t('settings.dailyReminder')}
-              description={t('settings.dailyReminderHint')}
-              left={(props) => <List.Icon {...props} icon="bell-outline" />}
-              right={() => <Switch value={reminder.enabled} onValueChange={(v) => void changeReminder({ enabled: v })} />}
-            />
-            {reminder.enabled && (
-              <View style={styles.chips}>
-                {REMINDER_TIMES.map((m) => (
-                  <Chip key={m} selected={reminder.minutes === m} showSelectedOverlay onPress={() => void changeReminder({ minutes: m })}>
-                    {t(m < 20 * 60 ? 'settings.pmEvening' : 'settings.pmNight', { hour: m / 60 - 12 })}
-                  </Chip>
-                ))}
-              </View>
-            )}
-          </List.Section>
-        </>
+        <Section title={t('settings.reminder')}>
+          <List.Item
+            title={t('settings.dailyReminder')}
+            description={t('settings.dailyReminderHint')}
+            left={rowIcon('bell-outline', '#E53935')}
+            right={() => <Switch value={reminder.enabled} onValueChange={(v) => void changeReminder({ enabled: v })} />}
+          />
+          {reminder.enabled && (
+            <View style={styles.chips}>
+              {REMINDER_TIMES.map((m) => (
+                <Chip key={m} selected={reminder.minutes === m} showSelectedOverlay onPress={() => void changeReminder({ minutes: m })}>
+                  {t(m < 20 * 60 ? 'settings.pmEvening' : 'settings.pmNight', { hour: m / 60 - 12 })}
+                </Chip>
+              ))}
+            </View>
+          )}
+        </Section>
       )}
       {lockAvailable && (
-        <>
-          <Divider />
-          <List.Section>
-            <List.Subheader>{t('settings.security')}</List.Subheader>
-            <List.Item
-              title={t('settings.appLock')}
-              description={t('settings.appLockHint')}
-              left={(props) => <List.Icon {...props} icon="lock" />}
-              right={() => <Switch value={lockEnabled} onValueChange={(v) => void toggleLock(v)} />}
-            />
-          </List.Section>
-        </>
+        <Section title={t('settings.security')}>
+          <List.Item
+            title={t('settings.appLock')}
+            description={t('settings.appLockHint')}
+            left={rowIcon('lock', '#546E7A')}
+            right={() => <Switch value={lockEnabled} onValueChange={(v) => void toggleLock(v)} />}
+          />
+        </Section>
       )}
-      <Divider />
-      <List.Section>
-        <List.Subheader>{t('settings.account')}</List.Subheader>
-        <List.Item title={user.email} description={t('settings.signedIn')} left={(props) => <List.Icon {...props} icon="account" />} />
+      <Section title={t('settings.account')} separators inset={ROW_ICON_INSET}>
+        <List.Item title={user.email} description={t('settings.signedIn')} left={rowIcon('account', '#5C6BC0')} />
         <List.Item
           title={t('settings.signOut')}
+          titleStyle={{ color: colors.error }}
           description={busy && !confirm ? t('settings.syncingFirst') : undefined}
-          left={(props) => <List.Icon {...props} icon="logout" />}
+          left={rowIcon('logout', '#757575')}
           onPress={askSignOut}
           disabled={busy}
         />
-      </List.Section>
+      </Section>
 
       <Portal>
         <Dialog visible={confirm !== null} onDismiss={() => setConfirm(null)}>
@@ -210,8 +197,10 @@ export default function SettingsScreen() {
   );
 }
 
+const chevron = (props: { color: string; style?: StyleProp<ViewStyle> }) => <List.Icon {...props} icon="chevron-right" />;
+
 const styles = StyleSheet.create({
   content: { paddingBottom: 32 },
-  segment: { marginHorizontal: 16 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
+  segment: { margin: 12 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingBottom: 12 },
 });
