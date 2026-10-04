@@ -8,7 +8,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.spendwise.app"
+      "bundleIdentifier": "com.nayeembd.spendwise",
+      "appleTeamId": "8J2C4ZZ2V6"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,6 +27,7 @@
       "output": "single"
     },
     "plugins": [
+      "./plugins/withoutPushEntitlement",
       [
         "expo-router",
         {
