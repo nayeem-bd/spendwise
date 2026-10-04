@@ -6,6 +6,7 @@ import { BudgetRow } from '@/components/BudgetRow';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
+import { EmptyState } from '@/components/EmptyState';
 import { budgetStatuses } from '@/lib/db/repositories/budgets';
 import { useT } from '@/i18n/i18n';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
@@ -43,7 +44,7 @@ export default function BudgetsScreen() {
   const perCategory = (
     <>
       <List.Subheader>{t('settings.categories')}</List.Subheader>
-      {categories.length === 0 && <Text style={styles.hint}>{t('budget.noneYet')}</Text>}
+      {categories.length === 0 && <EmptyState icon="target" text={t('budget.noneYet')} />}
       {categories.map((c) => (
         <BudgetRow key={c.categoryId} status={c} onPress={() => edit(month, c.categoryId!)} />
       ))}
@@ -83,7 +84,6 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 32 },
   card: { borderRadius: 16, paddingBottom: 12, overflow: 'hidden' },
   empty: { paddingHorizontal: 16, paddingBottom: 8, gap: 12, alignItems: 'flex-start' },
-  hint: { paddingHorizontal: 16 },
   divider: { marginTop: 16 },
   add: { alignSelf: 'flex-start', marginHorizontal: 8, marginTop: 8 },
 });

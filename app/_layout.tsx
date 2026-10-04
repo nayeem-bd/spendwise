@@ -4,7 +4,7 @@ import '@/lib/sync/backgroundTask';
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { StyleSheet, useColorScheme, View } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 
 import { initAuth } from '@/lib/auth/auth';
@@ -33,10 +33,13 @@ export default function RootLayout() {
   return (
     <PaperProvider theme={theme}>
       <ThemeProvider value={navTheme(theme, dark)}>
-        <DatabaseGate>
-          <AppStack />
-          <LockScreen />
-        </DatabaseGate>
+        {/* Themed backdrop so the loading screen doesn't flash white in dark mode. */}
+        <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+          <DatabaseGate>
+            <AppStack />
+            <LockScreen />
+          </DatabaseGate>
+        </View>
         <StatusBar style={dark ? 'light' : 'dark'} />
         <UpdateSnackbar />
         <NoticeSnackbar />
@@ -84,3 +87,7 @@ function AppStack() {
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});

@@ -5,8 +5,10 @@ import { AddButtons } from '@/components/AddButtons';
 import { DonutChart } from '@/components/DonutChart';
 import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
+import { MonthTotals } from '@/components/MonthTotals';
 import { page, useWindowClass } from '@/components/layout';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
+import { EmptyState } from '@/components/EmptyState';
 import { expenseByCategory, monthTotals, type CategoryTotal } from '@/lib/db/repositories/summary';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
@@ -54,11 +56,7 @@ export default function HomeScreen() {
           </Text>
         </DonutChart>
       </View>
-      <View style={styles.totals}>
-        <Total label={t('type.income')} icon="arrow-down" value={f.money(totals.income)} color={colors.income} />
-        <Total label={t('type.expense')} icon="arrow-up" value={f.money(totals.expense)} color={colors.expense} />
-        <Total label={t('home.balance')} icon="scale-balance" value={f.money(totals.balance)} color={totals.balance < 0 ? colors.expense : theme.colors.onSurface} />
-      </View>
+      <MonthTotals totals={totals} />
     </>
   );
 
@@ -66,7 +64,7 @@ export default function HomeScreen() {
     <>
       <List.Subheader>{t('home.byCategory')}</List.Subheader>
       {byCategory.length === 0 ? (
-        <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>{t('home.empty')}</Text>
+        <EmptyState icon="chart-donut" text={t('home.empty')} />
       ) : (
         byCategory.map((c) => <CategoryShare key={c.categoryId ?? 'none'} item={c} total={totals.expense} />)
       )}
@@ -99,23 +97,6 @@ export default function HomeScreen() {
         {breakdown}
       </ScrollView>
       <AddButtons />
-    </View>
-  );
-}
-
-function Total({ label, icon, value, color }: { label: string; icon: string; value: string; color: string }) {
-  const theme = useTheme();
-  return (
-    <View style={[styles.total, { backgroundColor: theme.colors.elevation.level2 }]}>
-      <View style={styles.totalLabel}>
-        <List.Icon icon={icon} color={color} style={styles.totalIcon} />
-        <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>
-          {label}
-        </Text>
-      </View>
-      <Text variant="titleMedium" style={[styles.number, { color }]} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
     </View>
   );
 }
@@ -159,10 +140,6 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16, paddingBottom: 8, overflow: 'hidden' },
   chart: { alignItems: 'center', marginVertical: 8 },
   centerAmount: { maxWidth: '70%' },
-  totals: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 12, gap: 8 },
-  total: { flex: 1, minWidth: 0, gap: 4, padding: 12, borderRadius: 12 },
-  totalLabel: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  totalIcon: { margin: 0, width: 18, height: 18 },
   number: { fontVariant: ['tabular-nums'] },
   share: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   shareBody: { flex: 1, minWidth: 0, gap: 6 },
@@ -172,5 +149,4 @@ const styles = StyleSheet.create({
   track: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 3 },
   percent: { minWidth: 32, textAlign: 'right' },
-  empty: { textAlign: 'center', padding: 24 },
 });

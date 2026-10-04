@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { Button, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconBadge } from '@/components/IconBadge';
@@ -20,6 +20,7 @@ export default function AccountEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useUser();
   const { t } = useT();
+  const theme = useTheme();
   const displayName = useDisplayName();
   const isNew = id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getAccount(getDb(), id)));
@@ -100,7 +101,7 @@ export default function AccountEditScreen() {
       </Button>
       {!isNew && <SharingSection accountId={id} isOwner />}
       {!isNew && (
-        <Button textColor="#C62828" onPress={() => setConfirmDelete(true)}>
+        <Button textColor={theme.colors.error} onPress={() => setConfirmDelete(true)}>
           {t('account.delete')}
         </Button>
       )}

@@ -6,6 +6,7 @@ import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
 import { TrendChart } from '@/components/TrendChart';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
+import { EmptyState } from '@/components/EmptyState';
 import { categoryComparison, monthlyTrend } from '@/lib/db/repositories/summary';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
@@ -41,7 +42,7 @@ export default function ReportsScreen() {
   const comparisonSection = (
     <>
       <List.Subheader>{t('reports.vs', { month: previous })}</List.Subheader>
-      {comparison.length === 0 && <Text style={styles.empty}>{t('reports.empty')}</Text>}
+      {comparison.length === 0 && <EmptyState icon="chart-bar" text={t('reports.empty')} />}
       {comparison.map((c) => {
         const up = c.change > 0;
         const pct = c.previous > 0 ? Math.round((Math.abs(c.change) / c.previous) * 100) : null;
@@ -100,7 +101,6 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16, paddingBottom: 12, overflow: 'hidden' },
   chart: { paddingHorizontal: 16 },
   divider: { marginTop: 16 },
-  empty: { paddingHorizontal: 16 },
   icon: { marginLeft: 16, justifyContent: 'center' },
   change: { alignSelf: 'center', fontVariant: ['tabular-nums'], fontWeight: '600' },
 });

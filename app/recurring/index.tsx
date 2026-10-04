@@ -11,6 +11,7 @@ import { listRecurring } from '@/lib/db/repositories/recurring';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { moneyColors } from '@/theme';
 import { page } from '@/components/layout';
+import { EmptyState } from '@/components/EmptyState';
 
 export default function RecurringListScreen() {
   const theme = useTheme();
@@ -28,7 +29,7 @@ export default function RecurringListScreen() {
         contentContainerStyle={[page.list, styles.list]}
         keyExtractor={(r) => r.id}
         ListEmptyComponent={
-          <Text style={styles.empty}>{t('recurring.empty')}</Text>
+          <EmptyState icon="repeat" text={t('recurring.empty')} />
         }
         renderItem={({ item }) => {
           const tpl = item.template;
@@ -71,7 +72,6 @@ export default function RecurringListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  empty: { padding: 24, textAlign: 'center' },
   icon: { marginLeft: 16, justifyContent: 'center' },
   amount: { alignSelf: 'center', fontVariant: ['tabular-nums'], fontWeight: '600' },
   paused: { opacity: 0.55 },

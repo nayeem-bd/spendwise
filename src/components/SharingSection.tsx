@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, Dialog, IconButton, List, Portal, Text } from 'react-native-paper';
+import { Button, Dialog, IconButton, List, Portal, Text, useTheme } from 'react-native-paper';
 
 import { translateError, useT } from '@/i18n/i18n';
 import { listMembers } from '@/lib/db/repositories/sharing';
@@ -16,6 +16,7 @@ import { ConfirmDialog } from './ConfirmDialog';
 /** Sharing for one account: owners invite and remove people; members see who shared it and can leave. */
 export function SharingSection({ accountId, isOwner }: { accountId: string; isOwner: boolean }) {
   const { t } = useT();
+  const theme = useTheme();
   const members = useLocalQuery((db) => listMembers(db, accountId), ['account_members'], [accountId]);
   const owner = members.find((m) => m.role === 'owner');
   const others = members.filter((m) => m.role === 'member');
@@ -56,7 +57,7 @@ export function SharingSection({ accountId, isOwner }: { accountId: string; isOw
           {t('sharing.invite')}
         </Button>
       ) : (
-        <Button icon="logout" textColor="#C62828" disabled={busy} onPress={() => setConfirm({ kind: 'leave' })}>
+        <Button icon="logout" textColor={theme.colors.error} disabled={busy} onPress={() => setConfirm({ kind: 'leave' })}>
           {t('sharing.leave')}
         </Button>
       )}

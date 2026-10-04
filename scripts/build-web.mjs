@@ -8,12 +8,17 @@ run('expo export -p web');
 
 const HEAD_TAGS = [
   '<link rel="manifest" href="/manifest.webmanifest" />',
-  '<meta name="theme-color" content="#2E7D32" />',
+  // Match the app's header (Paper surface) so the browser chrome blends in.
+  '<meta name="theme-color" content="#FFFBFE" media="(prefers-color-scheme: light)" />',
+  '<meta name="theme-color" content="#1C1B1F" media="(prefers-color-scheme: dark)" />',
   '<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />',
   '<meta name="apple-mobile-web-app-capable" content="yes" />',
   '<meta name="mobile-web-app-capable" content="yes" />',
   '<meta name="apple-mobile-web-app-title" content="SpendWise" />',
   '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
+  // Background before the JS loads (no white flash in dark mode). touch-action
+  // stops iOS Safari zooming in when keypad keys are tapped quickly.
+  '<style>html,body{background:#FFFBFE;touch-action:manipulation}@media (prefers-color-scheme:dark){html,body{background:#1C1B1F}}</style>',
 ].join('\n    ');
 
 const indexPath = 'dist/index.html';

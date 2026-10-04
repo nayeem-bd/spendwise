@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Chip, Dialog, Divider, List, Portal, SegmentedButtons, Switch, Text } from 'react-native-paper';
+import { Button, Chip, Dialog, Divider, List, Portal, SegmentedButtons, Switch, Text, useTheme } from 'react-native-paper';
 
 import { translateError, useT } from '@/i18n/i18n';
 import { setLanguage } from '@/i18n/language';
@@ -21,6 +21,7 @@ import { setThemePreference, useThemeStore, type ThemePreference } from '@/store
 export default function SettingsScreen() {
   const user = useUser();
   const { t, lang } = useT();
+  const { colors } = useTheme();
   const theme = useThemeStore((st) => st.preference);
   const [confirm, setConfirm] = useState<{ pending: number } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -199,7 +200,7 @@ export default function SettingsScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setConfirm(null)}>{t('common.cancel')}</Button>
-            <Button onPress={doSignOut} loading={busy} textColor={confirm?.pending ? '#C62828' : undefined}>
+            <Button onPress={doSignOut} loading={busy} textColor={confirm?.pending ? colors.error : undefined}>
               {t('settings.signOut')}
             </Button>
           </Dialog.Actions>

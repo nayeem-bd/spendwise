@@ -3,9 +3,12 @@ import { Text, useTheme } from 'react-native-paper';
 
 import { AddButtons } from '@/components/AddButtons';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
+import { MonthTotals } from '@/components/MonthTotals';
 import { page } from '@/components/layout';
 import { TransactionRow } from '@/components/TransactionRow';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
+import { EmptyState } from '@/components/EmptyState';
+import { monthTotals } from '@/lib/db/repositories/summary';
 import { groupByDay, listTransactions } from '@/lib/db/repositories/transactions';
 import { useT } from '@/i18n/i18n';
 import { useFormat } from '@/i18n/useFormat';
@@ -24,6 +27,7 @@ export default function TransactionsScreen() {
     ['transactions', 'categories', 'accounts'],
     [month],
   );
+  const totals = useLocalQuery((db) => monthTotals(db, month), ['transactions'], [month]);
   const { refreshing, onRefresh } = useSyncRefresh();
 
   return (
@@ -31,8 +35,13 @@ export default function TransactionsScreen() {
       <SectionList
         sections={sections}
         keyExtractor={(t) => t.id}
-        ListHeaderComponent={<MonthSwitcher />}
-        ListEmptyComponent={<Text style={styles.empty}>{t('transactions.empty')}</Text>}
+        ListHeaderComponent={
+          <>
+            <MonthSwitcher />
+            {sections.length > 0 && <MonthTotals totals={totals} dense />}
+          </>
+        }
+        ListEmptyComponent={<EmptyState icon="receipt-text-outline" text={t('transactions.empty')} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         stickySectionHeadersEnabled
         renderSectionHeader={({ section }) => (
@@ -57,5 +66,4 @@ const styles = StyleSheet.create({
   list: { paddingBottom: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 },
   number: { fontVariant: ['tabular-nums'] },
-  empty: { padding: 32, textAlign: 'center' },
 });
