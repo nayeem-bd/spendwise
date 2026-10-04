@@ -52,7 +52,8 @@ function useHardwareKeys(onKey: (key: KeypadKey) => void, onSubmit?: () => void)
   }, []);
 }
 
-export function AmountKeypad({ onKey, onSubmit }: { onKey: (key: KeypadKey) => void; onSubmit?: () => void }) {
+/** Number pad for the amount. `dense` uses shorter keys, for when it's docked under other content. */
+export function AmountKeypad({ onKey, onSubmit, dense = false }: { onKey: (key: KeypadKey) => void; onSubmit?: () => void; dense?: boolean }) {
   const theme = useTheme();
   const { t, lang } = useT();
   useHardwareKeys(onKey, onSubmit);
@@ -68,6 +69,7 @@ export function AmountKeypad({ onKey, onSubmit }: { onKey: (key: KeypadKey) => v
               accessibilityLabel={key === 'back' ? t('common.delete') : key === '.' ? t('transaction.decimalPoint') : key}
               style={({ pressed }) => [
                 styles.key,
+                dense && styles.denseKey,
                 { backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.elevation.level1 },
               ]}
             >
@@ -88,4 +90,5 @@ const styles = StyleSheet.create({
   pad: { gap: 8 },
   row: { flexDirection: 'row', gap: 8 },
   key: { flex: 1, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  denseKey: { height: 44 },
 });

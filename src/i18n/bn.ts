@@ -36,6 +36,7 @@ export const bn: Record<StringKey, string> = {
   'home.balance': 'ব্যালান্স',
   'home.empty': 'এই মাসে এখনো কোনো খরচ নেই।',
   'home.byCategory': 'ক্যাটাগরি অনুযায়ী খরচ',
+  'home.overview': 'সারসংক্ষেপ',
 
   'month.previous': 'আগের মাস',
   'month.next': 'পরের মাস',
@@ -114,7 +115,7 @@ export const bn: Record<StringKey, string> = {
   'reports.last6': 'গত ৬ মাস',
   'reports.vs': '{month}-এর তুলনায় খরচ',
   'reports.empty': 'কোনো মাসেই খরচ নেই।',
-  'reports.was': '{now} · আগে ছিল {before}',
+  'reports.was': 'আগে ছিল {before}',
   'reports.noChange': 'কোনো পরিবর্তন নেই',
   'reports.up': '{amount} বেড়েছে',
   'reports.down': '{amount} কমেছে',

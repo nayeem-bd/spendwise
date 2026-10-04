@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { Button, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { CategoryGrid } from '@/components/CategoryGrid';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
@@ -21,6 +21,7 @@ export default function BudgetEditScreen() {
   const params = useLocalSearchParams<{ month: string; category: string }>();
   const user = useUser();
   const { t } = useT();
+  const theme = useTheme();
   const f = useFormat();
   const name = useDisplayName();
   const month = params.month;
@@ -101,7 +102,7 @@ export default function BudgetEditScreen() {
         {t('common.save')}
       </Button>
       {existing && (
-        <Button textColor="#C62828" onPress={() => setConfirmRemove(true)}>
+        <Button textColor={theme.colors.error} onPress={() => setConfirmRemove(true)}>
           {t('budget.remove')}
         </Button>
       )}

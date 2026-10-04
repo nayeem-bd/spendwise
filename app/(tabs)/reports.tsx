@@ -1,11 +1,13 @@
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Divider, List, Surface, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 
 import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
+import { Section } from '@/components/Section';
 import { TrendChart } from '@/components/TrendChart';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
+import { EmptyState } from '@/components/EmptyState';
 import { categoryComparison, monthlyTrend } from '@/lib/db/repositories/summary';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
@@ -30,43 +32,46 @@ export default function ReportsScreen() {
   const { expanded } = useWindowClass();
 
   const trendSection = (
-    <>
-      <List.Subheader>{t('reports.last6')}</List.Subheader>
+    <Section title={t('reports.last6')} style={expanded && styles.flush}>
       <View style={styles.chart}>
         <TrendChart data={trend} selected={month} />
       </View>
-    </>
+    </Section>
   );
 
   const comparisonSection = (
-    <>
-      <List.Subheader>{t('reports.vs', { month: previous })}</List.Subheader>
-      {comparison.length === 0 && <Text style={styles.empty}>{t('reports.empty')}</Text>}
+    <Section title={t('reports.vs', { month: previous })} style={expanded && styles.flush} separators inset={64}>
+      {comparison.length === 0 && <EmptyState icon="chart-bar" text={t('reports.empty')} />}
       {comparison.map((c) => {
         const up = c.change > 0;
         const pct = c.previous > 0 ? Math.round((Math.abs(c.change) / c.previous) * 100) : null;
         return (
-          <List.Item
-            key={c.categoryId ?? 'none'}
-            title={name(c.categoryId, c.name) || t('common.uncategorized')}
-            description={t('reports.was', { now: f.money(c.total), before: f.money(c.previous) })}
-            left={() => (
-              <View style={styles.icon}>
-                <IconBadge icon={c.icon} color={c.color} size={36} />
-              </View>
-            )}
-            right={() => (
+          <View key={c.categoryId ?? 'none'} style={styles.row}>
+            <IconBadge icon={c.icon} color={c.color} size={36} />
+            <View style={styles.rowBody}>
+              <Text variant="bodyLarge" numberOfLines={1}>
+                {name(c.categoryId, c.name) || t('common.uncategorized')}
+              </Text>
+              <Text variant="bodySmall" numberOfLines={1} style={{ color: theme.colors.onSurfaceVariant }}>
+                {t('reports.was', { before: f.money(c.previous) })}
+              </Text>
+            </View>
+            <View style={styles.rowEnd}>
+              <Text variant="bodyLarge" style={[styles.number, styles.total]}>
+                {f.money(c.total)}
+              </Text>
               <Text
-                style={[styles.change, { color: c.change === 0 ? theme.colors.onSurfaceVariant : up ? colors.expense : colors.income }]}
+                variant="labelMedium"
+                style={[styles.number, { color: c.change === 0 ? theme.colors.onSurfaceVariant : up ? colors.expense : colors.income }]}
                 accessibilityLabel={c.change === 0 ? t('reports.noChange') : t(up ? 'reports.up' : 'reports.down', { amount: f.money(Math.abs(c.change) as Poisha) })}
               >
-                {c.change === 0 ? '—' : `${up ? '▲' : '▼'} ${f.money(Math.abs(c.change) as Poisha)}${pct !== null ? ` (${f.num(pct)}%)` : ''}`}
+                {c.change === 0 ? '—' : `${up ? '▲' : '▼'} ${f.money(Math.abs(c.change) as Poisha)}${pct !== null ? ` · ${f.num(pct)}%` : ''}`}
               </Text>
-            )}
-          />
+            </View>
+          </View>
         );
       })}
-    </>
+    </Section>
   );
 
   return (
@@ -77,17 +82,12 @@ export default function ReportsScreen() {
       <MonthSwitcher />
       {expanded ? (
         <View style={page.columns}>
-          <Surface style={[page.column, styles.card]} elevation={1}>
-            {trendSection}
-          </Surface>
-          <Surface style={[page.column, styles.card]} elevation={1}>
-            {comparisonSection}
-          </Surface>
+          <View style={page.column}>{trendSection}</View>
+          <View style={page.column}>{comparisonSection}</View>
         </View>
       ) : (
         <>
           {trendSection}
-          <Divider style={styles.divider} />
           {comparisonSection}
         </>
       )}
@@ -97,10 +97,11 @@ export default function ReportsScreen() {
 
 const styles = StyleSheet.create({
   content: { paddingBottom: 32 },
-  card: { borderRadius: 16, paddingBottom: 12, overflow: 'hidden' },
-  chart: { paddingHorizontal: 16 },
-  divider: { marginTop: 16 },
-  empty: { paddingHorizontal: 16 },
-  icon: { marginLeft: 16, justifyContent: 'center' },
-  change: { alignSelf: 'center', fontVariant: ['tabular-nums'], fontWeight: '600' },
+  flush: { marginHorizontal: 0 },
+  chart: { padding: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
+  rowBody: { flex: 1, minWidth: 0, gap: 2 },
+  rowEnd: { alignItems: 'flex-end', gap: 2 },
+  number: { fontVariant: ['tabular-nums'] },
+  total: { fontWeight: '600' },
 });

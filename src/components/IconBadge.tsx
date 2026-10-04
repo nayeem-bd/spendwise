@@ -6,11 +6,24 @@ export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 const isIconName = (name: string): name is IconName => name in MaterialCommunityIcons.glyphMap;
 
-/** A category/account icon on a coloured circle. Unknown icon names fall back to a tag. */
-export function IconBadge({ icon, color, size = 40 }: { icon: string | null; color: string | null; size?: number }) {
+/**
+ * A category/account icon on a coloured circle (or rounded square, like iOS
+ * Settings icons). Unknown icon names fall back to a tag.
+ */
+export function IconBadge({
+  icon,
+  color,
+  size = 40,
+  square = false,
+}: {
+  icon: string | null;
+  color: string | null;
+  size?: number;
+  square?: boolean;
+}) {
   const name: IconName = icon && isIconName(icon) ? icon : 'tag';
   return (
-    <View style={[styles.circle, { width: size, height: size, borderRadius: size / 2, backgroundColor: color ?? '#757575' }]}>
+    <View style={[styles.circle, { width: size, height: size, borderRadius: square ? size * 0.28 : size / 2, backgroundColor: color ?? '#757575' }]}>
       <MaterialCommunityIcons name={name} size={size * 0.55} color="#fff" />
     </View>
   );

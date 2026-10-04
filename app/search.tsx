@@ -17,6 +17,8 @@ import { moneyColors } from '@/theme';
 import { addMonths, monthOf, monthRange, todayISO } from '@/utils/date';
 import { parseTaka } from '@/utils/money';
 import { page } from '@/components/layout';
+import { EmptyState } from '@/components/EmptyState';
+import { CardRow } from '@/components/Section';
 
 type Period = 'all' | 'month' | '3months' | 'year';
 
@@ -143,8 +145,12 @@ export default function SearchScreen() {
             </View>
           </View>
         }
-        ListEmptyComponent={<Text style={styles.empty}>{t('search.empty')}</Text>}
-        renderItem={({ item }) => <TransactionRow item={item} showDate />}
+        ListEmptyComponent={<EmptyState icon="magnify-close" text={t('search.empty')} />}
+        renderItem={({ item, index }) => (
+          <CardRow index={index} count={results.length}>
+            <TransactionRow item={item} showDate />
+          </CardRow>
+        )}
       />
     </View>
   );
@@ -167,5 +173,4 @@ const styles = StyleSheet.create({
   amount: { flex: 1 },
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summary: { flexShrink: 1 },
-  empty: { padding: 24, textAlign: 'center' },
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { StyleSheet } from 'react-native';
 import { Button, Dialog, HelperText, List, Portal, TextInput } from 'react-native-paper';
 
@@ -6,8 +6,8 @@ import { translateError, useT } from '@/i18n/i18n';
 import { joinWithCode } from '@/lib/sync/sharing';
 import { showNotice } from '@/store/notice';
 
-/** Settings row + dialog: join someone's shared account with an invite code. */
-export function JoinSharedAccount() {
+/** Settings row + dialog: join someone's shared account with an invite code. `left` overrides the row icon. */
+export function JoinSharedAccount({ left }: { left?: ComponentProps<typeof List.Item>['left'] } = {}) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState('');
@@ -34,7 +34,7 @@ export function JoinSharedAccount() {
       <List.Item
         title={t('sharing.join')}
         description={t('sharing.joinHint')}
-        left={(props) => <List.Icon {...props} icon="account-multiple-plus" />}
+        left={left ?? ((props) => <List.Icon {...props} icon="account-multiple-plus" />)}
         onPress={() => setOpen(true)}
       />
       <Portal>
