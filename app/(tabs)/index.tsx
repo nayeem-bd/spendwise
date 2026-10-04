@@ -1,6 +1,7 @@
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { AddButtons } from '@/components/AddButtons';
 import { DonutChart } from '@/components/DonutChart';
 import { IconBadge } from '@/components/IconBadge';
@@ -71,7 +72,7 @@ export default function HomeScreen() {
     </Section>
   );
 
-  const refresh = <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />;
+  const refresh = <PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />;
 
   if (expanded) {
     // Desktop / large tablet: overview and the + / − buttons on the left, breakdown on the right.
