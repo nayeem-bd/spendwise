@@ -5,6 +5,7 @@ import { AddButtons } from '@/components/AddButtons';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { MonthTotals } from '@/components/MonthTotals';
 import { page } from '@/components/layout';
+import { CardRow } from '@/components/Section';
 import { TransactionRow } from '@/components/TransactionRow';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { EmptyState } from '@/components/EmptyState';
@@ -46,14 +47,20 @@ export default function TransactionsScreen() {
         stickySectionHeadersEnabled
         renderSectionHeader={({ section }) => (
           <View style={[styles.header, { backgroundColor: theme.colors.background }]}>
-            <Text variant="labelLarge">{f.day(section.day)}</Text>
+            <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant }}>
+              {f.day(section.day)}
+            </Text>
             <Text variant="labelLarge" style={[styles.number, { color: section.net < 0 ? colors.expense : colors.income }]}>
               {section.net > 0 ? '+' : ''}
               {f.money(section.net)}
             </Text>
           </View>
         )}
-        renderItem={({ item }) => <TransactionRow item={item} />}
+        renderItem={({ item, index, section }) => (
+          <CardRow index={index} count={section.data.length}>
+            <TransactionRow item={item} />
+          </CardRow>
+        )}
         contentContainerStyle={[page.list, styles.list]}
       />
       <AddButtons />
@@ -64,6 +71,6 @@ export default function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   list: { paddingBottom: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 28, paddingTop: 16, paddingBottom: 6 },
   number: { fontVariant: ['tabular-nums'] },
 });

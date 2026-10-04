@@ -41,6 +41,7 @@ export const en = {
   'home.balance': 'Balance',
   'home.empty': 'No spending this month yet.',
   'home.byCategory': 'Spending by category',
+  'home.overview': 'Overview',
 
   // Month switcher
   'month.previous': 'Previous month',
@@ -125,7 +126,7 @@ export const en = {
   'reports.last6': 'Last 6 months',
   'reports.vs': 'Spending vs {month}',
   'reports.empty': 'No spending in either month.',
-  'reports.was': '{now} · was {before}',
+  'reports.was': 'was {before}',
   'reports.noChange': 'No change',
   'reports.up': 'Up {amount}',
   'reports.down': 'Down {amount}',

@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Divider, List, Surface, Text } from 'react-native-paper';
+import { Button, Text } from 'react-native-paper';
 
 import { BudgetRow } from '@/components/BudgetRow';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
+import { Section } from '@/components/Section';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { EmptyState } from '@/components/EmptyState';
 import { budgetStatuses } from '@/lib/db/repositories/budgets';
@@ -26,8 +27,7 @@ export default function BudgetsScreen() {
   const { expanded } = useWindowClass();
 
   const monthly = (
-    <>
-      <List.Subheader>{t('budget.wholeMonth')}</List.Subheader>
+    <Section title={t('budget.wholeMonth')} style={expanded && styles.flush}>
       {total ? (
         <BudgetRow status={total} onPress={() => edit(month, 'total')} />
       ) : (
@@ -38,20 +38,27 @@ export default function BudgetsScreen() {
           </Button>
         </View>
       )}
-    </>
+    </Section>
+  );
+
+  const addButton = (
+    <Button key="add" icon="plus" style={styles.add} onPress={() => edit(month, 'new')}>
+      {t('budget.addCategory')}
+    </Button>
   );
 
   const perCategory = (
-    <>
-      <List.Subheader>{t('settings.categories')}</List.Subheader>
-      {categories.length === 0 && <EmptyState icon="target" text={t('budget.noneYet')} />}
-      {categories.map((c) => (
-        <BudgetRow key={c.categoryId} status={c} onPress={() => edit(month, c.categoryId!)} />
-      ))}
-      <Button icon="plus" style={styles.add} onPress={() => edit(month, 'new')}>
-        {t('budget.addCategory')}
-      </Button>
-    </>
+    <Section title={t('settings.categories')} style={expanded && styles.flush} separators inset={64}>
+      {categories.length === 0 ? (
+        // One block, so no separator between the message and the button.
+        <View>
+          <EmptyState icon="target" text={t('budget.noneYet')} />
+          {addButton}
+        </View>
+      ) : (
+        [...categories.map((c) => <BudgetRow key={c.categoryId} status={c} onPress={() => edit(month, c.categoryId!)} />), addButton]
+      )}
+    </Section>
   );
 
   return (
@@ -62,17 +69,12 @@ export default function BudgetsScreen() {
       <MonthSwitcher />
       {expanded ? (
         <View style={page.columns}>
-          <Surface style={[page.column, styles.card]} elevation={1}>
-            {monthly}
-          </Surface>
-          <Surface style={[page.column, styles.card]} elevation={1}>
-            {perCategory}
-          </Surface>
+          <View style={page.column}>{monthly}</View>
+          <View style={page.column}>{perCategory}</View>
         </View>
       ) : (
         <>
           {monthly}
-          <Divider style={styles.divider} />
           {perCategory}
         </>
       )}
@@ -82,8 +84,7 @@ export default function BudgetsScreen() {
 
 const styles = StyleSheet.create({
   content: { paddingBottom: 32 },
-  card: { borderRadius: 16, paddingBottom: 12, overflow: 'hidden' },
-  empty: { paddingHorizontal: 16, paddingBottom: 8, gap: 12, alignItems: 'flex-start' },
-  divider: { marginTop: 16 },
-  add: { alignSelf: 'flex-start', marginHorizontal: 8, marginTop: 8 },
+  flush: { marginHorizontal: 0 },
+  empty: { padding: 16, gap: 12, alignItems: 'flex-start' },
+  add: { alignSelf: 'flex-start', margin: 8 },
 });

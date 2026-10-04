@@ -18,6 +18,7 @@ import { addMonths, monthOf, monthRange, todayISO } from '@/utils/date';
 import { parseTaka } from '@/utils/money';
 import { page } from '@/components/layout';
 import { EmptyState } from '@/components/EmptyState';
+import { CardRow } from '@/components/Section';
 
 type Period = 'all' | 'month' | '3months' | 'year';
 
@@ -145,7 +146,11 @@ export default function SearchScreen() {
           </View>
         }
         ListEmptyComponent={<EmptyState icon="magnify-close" text={t('search.empty')} />}
-        renderItem={({ item }) => <TransactionRow item={item} showDate />}
+        renderItem={({ item, index }) => (
+          <CardRow index={index} count={results.length}>
+            <TransactionRow item={item} showDate />
+          </CardRow>
+        )}
       />
     </View>
   );

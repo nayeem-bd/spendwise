@@ -1,5 +1,5 @@
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { List, Surface, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 
 import { AddButtons } from '@/components/AddButtons';
 import { DonutChart } from '@/components/DonutChart';
@@ -7,6 +7,7 @@ import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { MonthTotals } from '@/components/MonthTotals';
 import { page, useWindowClass } from '@/components/layout';
+import { Section } from '@/components/Section';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { EmptyState } from '@/components/EmptyState';
 import { expenseByCategory, monthTotals, type CategoryTotal } from '@/lib/db/repositories/summary';
@@ -56,19 +57,18 @@ export default function HomeScreen() {
           </Text>
         </DonutChart>
       </View>
-      <MonthTotals totals={totals} />
+      <MonthTotals totals={totals} onCard={expanded} />
     </>
   );
 
   const breakdown = (
-    <>
-      <List.Subheader>{t('home.byCategory')}</List.Subheader>
+    <Section title={t('home.byCategory')} style={expanded && styles.flush}>
       {byCategory.length === 0 ? (
         <EmptyState icon="chart-donut" text={t('home.empty')} />
       ) : (
         byCategory.map((c) => <CategoryShare key={c.categoryId ?? 'none'} item={c} total={totals.expense} />)
       )}
-    </>
+    </Section>
   );
 
   const refresh = <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />;
@@ -78,13 +78,13 @@ export default function HomeScreen() {
     return (
       <ScrollView contentContainerStyle={[page.wide, styles.content]} refreshControl={refresh}>
         <View style={page.columns}>
-          <Surface style={[page.column, styles.card]} elevation={1}>
-            {overview}
-            <AddButtons />
-          </Surface>
-          <Surface style={[page.column, styles.card]} elevation={1}>
-            {breakdown}
-          </Surface>
+          <View style={page.column}>
+            <Section title={t('home.overview')} style={styles.flush}>
+              {overview}
+              <AddButtons />
+            </Section>
+          </View>
+          <View style={page.column}>{breakdown}</View>
         </View>
       </ScrollView>
     );
@@ -137,7 +137,7 @@ function CategoryShare({ item, total }: { item: CategoryTotal; total: number }) 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingBottom: 16, paddingTop: 8 },
-  card: { borderRadius: 16, paddingBottom: 8, overflow: 'hidden' },
+  flush: { marginHorizontal: 0 },
   chart: { alignItems: 'center', marginVertical: 8 },
   centerAmount: { maxWidth: '70%' },
   number: { fontVariant: ['tabular-nums'] },
