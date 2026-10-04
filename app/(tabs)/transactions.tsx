@@ -1,6 +1,7 @@
-import { RefreshControl, SectionList, StyleSheet, View } from 'react-native';
+import { SectionList, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { AddButtons } from '@/components/AddButtons';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { MonthTotals } from '@/components/MonthTotals';
@@ -43,7 +44,7 @@ export default function TransactionsScreen() {
           </>
         }
         ListEmptyComponent={<EmptyState icon="receipt-text-outline" text={t('transactions.empty')} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />}
         stickySectionHeadersEnabled
         renderSectionHeader={({ section }) => (
           <View style={[styles.header, { backgroundColor: theme.colors.background }]}>

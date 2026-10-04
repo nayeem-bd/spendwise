@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { BudgetRow } from '@/components/BudgetRow';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
@@ -64,7 +65,7 @@ export default function BudgetsScreen() {
   return (
     <ScrollView
       contentContainerStyle={[expanded ? page.wide : page.list, styles.content]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={<PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <MonthSwitcher />
       {expanded ? (

@@ -1,6 +1,7 @@
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
@@ -77,7 +78,7 @@ export default function ReportsScreen() {
   return (
     <ScrollView
       contentContainerStyle={[expanded ? page.wide : page.list, styles.content]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={<PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <MonthSwitcher />
       {expanded ? (
