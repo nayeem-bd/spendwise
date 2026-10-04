@@ -11,6 +11,8 @@ import { listRecurring } from '@/lib/db/repositories/recurring';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { moneyColors } from '@/theme';
 import { page } from '@/components/layout';
+import { EmptyState } from '@/components/EmptyState';
+import { CardRow } from '@/components/Section';
 
 export default function RecurringListScreen() {
   const theme = useTheme();
@@ -28,40 +30,42 @@ export default function RecurringListScreen() {
         contentContainerStyle={[page.list, styles.list]}
         keyExtractor={(r) => r.id}
         ListEmptyComponent={
-          <Text style={styles.empty}>{t('recurring.empty')}</Text>
+          <EmptyState icon="repeat" text={t('recurring.empty')} />
         }
-        renderItem={({ item }) => {
+        renderItem={({ item, index }) => {
           const tpl = item.template;
           const transfer = tpl.type === 'transfer';
           const schedule = `${t(FREQUENCY_KEY[item.frequency ?? 'monthly'])} · ${item.active ? t('recurring.next', { day: f.day(item.nextRun) }) : t('recurring.paused')}`;
           const account = name(tpl.accountId, item.accountName);
           return (
-            <List.Item
-              title={transfer ? t('type.transfer') : name(tpl.categoryId, item.categoryName) || t('common.uncategorized')}
-              description={[schedule, transfer ? `${account} → ${name(tpl.toAccountId, item.toAccountName)}` : account, tpl.note]
-                .filter(Boolean)
-                .join(' · ')}
-              style={!item.active && styles.paused}
-              left={() => (
-                <View style={styles.icon}>
-                  <IconBadge
-                    icon={transfer ? 'swap-horizontal' : item.categoryIcon}
-                    color={transfer ? theme.colors.outline : item.categoryColor}
-                  />
-                </View>
-              )}
-              right={() => (
-                <Text
-                  style={[
-                    styles.amount,
-                    { color: transfer ? theme.colors.onSurfaceVariant : tpl.type === 'income' ? colors.income : colors.expense },
-                  ]}
-                >
-                  {f.money(tpl.amount)}
-                </Text>
-              )}
-              onPress={() => router.push({ pathname: '/recurring/[id]', params: { id: item.id } })}
-            />
+            <CardRow index={index} count={rules.length}>
+              <List.Item
+                title={transfer ? t('type.transfer') : name(tpl.categoryId, item.categoryName) || t('common.uncategorized')}
+                description={[schedule, transfer ? `${account} → ${name(tpl.toAccountId, item.toAccountName)}` : account, tpl.note]
+                  .filter(Boolean)
+                  .join(' · ')}
+                style={!item.active && styles.paused}
+                left={() => (
+                  <View style={styles.icon}>
+                    <IconBadge
+                      icon={transfer ? 'swap-horizontal' : item.categoryIcon}
+                      color={transfer ? theme.colors.outline : item.categoryColor}
+                    />
+                  </View>
+                )}
+                right={() => (
+                  <Text
+                    style={[
+                      styles.amount,
+                      { color: transfer ? theme.colors.onSurfaceVariant : tpl.type === 'income' ? colors.income : colors.expense },
+                    ]}
+                  >
+                    {f.money(tpl.amount)}
+                  </Text>
+                )}
+                onPress={() => router.push({ pathname: '/recurring/[id]', params: { id: item.id } })}
+              />
+            </CardRow>
           );
         }}
       />
@@ -71,9 +75,8 @@ export default function RecurringListScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  empty: { padding: 24, textAlign: 'center' },
   icon: { marginLeft: 16, justifyContent: 'center' },
   amount: { alignSelf: 'center', fontVariant: ['tabular-nums'], fontWeight: '600' },
   paused: { opacity: 0.55 },
-  list: { paddingBottom: 32 },
+  list: { paddingTop: 16, paddingBottom: 32 },
 });

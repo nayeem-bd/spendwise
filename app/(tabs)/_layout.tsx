@@ -19,6 +19,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerRight: () => <SyncBadge />,
+        // Flat bars on the screen background, with a bold title, like native tab roots.
+        headerShadowVisible: false,
+        headerTitleStyle: { fontSize: 22, fontWeight: '700' },
         // Phones: bottom bar. Tablets: navigation rail. Desktop: sidebar with labels.
         tabBarPosition: compact ? 'bottom' : 'left',
         tabBarVariant: compact ? 'uikit' : 'material',

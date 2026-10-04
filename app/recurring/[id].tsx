@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, SegmentedButtons, Switch, Text, TextInput } from 'react-native-paper';
+import { Button, HelperText, SegmentedButtons, Switch, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { FREQUENCY_KEY } from '@/components/frequency';
@@ -19,6 +19,7 @@ export default function RecurringEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [rule] = useState(() => getRecurring(getDb(), id));
   const { t } = useT();
+  const theme = useTheme();
   const f = useFormat();
   const name = useDisplayName();
   const [amountText, setAmountText] = useState(rule ? poishaToInput(rule.template.amount) : '');
@@ -78,7 +79,7 @@ export default function RecurringEditScreen() {
       <Button mode="contained" onPress={save}>
         {t('common.save')}
       </Button>
-      <Button textColor="#C62828" onPress={() => setConfirmStop(true)}>
+      <Button textColor={theme.colors.error} onPress={() => setConfirmStop(true)}>
         {t('recurring.stop')}
       </Button>
       <ConfirmDialog

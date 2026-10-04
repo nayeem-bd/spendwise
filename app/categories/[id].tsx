@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, SegmentedButtons, Text, TextInput } from 'react-native-paper';
+import { Button, HelperText, SegmentedButtons, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconBadge } from '@/components/IconBadge';
@@ -18,6 +18,7 @@ export default function CategoryEditScreen() {
   const { id, type: typeParam } = useLocalSearchParams<{ id: string; type?: CategoryType }>();
   const user = useUser();
   const { t } = useT();
+  const theme = useTheme();
   const isNew = id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getCategory(getDb(), id)));
 
@@ -75,7 +76,7 @@ export default function CategoryEditScreen() {
         {t('common.save')}
       </Button>
       {!isNew && (
-        <Button textColor="#C62828" onPress={() => setConfirmDelete(true)}>
+        <Button textColor={theme.colors.error} onPress={() => setConfirmDelete(true)}>
           {t('category.delete')}
         </Button>
       )}

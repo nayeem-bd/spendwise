@@ -1,7 +1,8 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Chip, HelperText, IconButton, SegmentedButtons, Text, TextInput, useTheme } from 'react-native-paper';
+import { useEffect, useState } from 'react';
+import { Keyboard, Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Button, Chip, HelperText, IconButton, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AmountKeypad } from '@/components/AmountKeypad';
 import { CategoryGrid } from '@/components/CategoryGrid';
@@ -52,7 +53,13 @@ export default function TransactionScreen() {
   const f = useFormat();
   const displayName = useDisplayName();
   const { width } = useWindowClass();
+  const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const keyboardOpen = useKeyboardOpen();
   const twoColumns = width >= 760;
+  // Phones: the amount, keypad and Save stay docked at the bottom like Monefy,
+  // unless the window is too short to leave room for the details.
+  const docked = !twoColumns && height >= 600;
   const segmentIcons = width >= 420; // labels get cut off next to icons on small phones
   const isNew = params.id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getTransaction(getDb(), params.id)));
@@ -262,24 +269,69 @@ export default function TransactionScreen() {
     </>
   );
 
-  const entry = (
+  const keypad = <AmountKeypad onKey={(key) => setAmountText((text) => applyKey(text, key))} onSubmit={save} dense={docked} />;
+
+  const saveButton = (
     <>
-      <AmountKeypad onKey={(key) => setAmountText((text) => applyKey(text, key))} onSubmit={save} />
       {error && <HelperText type="error">{error}</HelperText>}
       <Button mode="contained" onPress={save} contentStyle={styles.saveContent}>
         {t('common.save')}
       </Button>
-      {!isNew && (
-        <Button textColor="#C62828" onPress={() => setConfirmDelete(true)}>
-          {t('transaction.delete')}
-        </Button>
-      )}
+    </>
+  );
+
+  const deleteButton = !isNew && (
+    <Button textColor={theme.colors.error} onPress={() => setConfirmDelete(true)}>
+      {t('transaction.delete')}
+    </Button>
+  );
+
+  const confirmDialog = (
+    <ConfirmDialog
+      visible={confirmDelete}
+      title={t('transaction.deleteTitle')}
+      message={t('transaction.deleteMessage')}
+      confirmLabel={t('common.delete')}
+      onConfirm={remove}
+      onDismiss={() => setConfirmDelete(false)}
+    />
+  );
+
+  const title = <Stack.Screen options={{ title: isNew ? t(TITLES[type]) : t('transaction.edit') }} />;
+
+  if (docked) {
+    return (
+      <View style={styles.screen}>
+        {title}
+        <ScrollView contentContainerStyle={[page.narrow, styles.container]} keyboardShouldPersistTaps="handled">
+          {typeSwitch}
+          {details}
+          {deleteButton}
+        </ScrollView>
+        <Surface elevation={2} style={[styles.dock, { paddingBottom: 12 + insets.bottom }]}>
+          <View style={[page.narrow, styles.dockContent]}>
+            {amountDisplay}
+            {/* The note's on-screen keyboard needs the room. */}
+            {!keyboardOpen && keypad}
+            {saveButton}
+          </View>
+        </Surface>
+        {confirmDialog}
+      </View>
+    );
+  }
+
+  const entry = (
+    <>
+      {keypad}
+      {saveButton}
+      {deleteButton}
     </>
   );
 
   return (
     <ScrollView contentContainerStyle={twoColumns ? [page.wide, styles.wide] : [page.narrow, styles.container]} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: isNew ? t(TITLES[type]) : t('transaction.edit') }} />
+      {title}
       {twoColumns ? (
         // Amount and keypad on the left, the details on the right.
         <View style={styles.columns}>
@@ -298,18 +350,25 @@ export default function TransactionScreen() {
           {entry}
         </>
       )}
-      <ConfirmDialog
-        visible={confirmDelete}
-        title={t('transaction.deleteTitle')}
-        message={t('transaction.deleteMessage')}
-        confirmLabel={t('common.delete')}
-        onConfirm={remove}
-        onDismiss={() => setConfirmDelete(false)}
-      />
+      {confirmDialog}
     </ScrollView>
   );
 }
 
+/** Whether the on-screen keyboard is showing (native only; on web it overlays the page). */
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const show = Keyboard.addListener('keyboardDidShow', () => setOpen(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return open;
+}
 
 function AccountChips({
   accounts,
@@ -348,7 +407,10 @@ function AccountChips({
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   container: { padding: 16, gap: 12 },
+  dock: { paddingHorizontal: 16, paddingTop: 4 },
+  dockContent: { gap: 8 },
   wide: { padding: 24 },
   columns: { flexDirection: 'row', alignItems: 'flex-start', gap: 32 },
   column: { flex: 1, minWidth: 0, gap: 12 },

@@ -1,4 +1,4 @@
-import { Button, Dialog, Portal, Text } from 'react-native-paper';
+import { Button, Dialog, Portal, Text, useTheme } from 'react-native-paper';
 
 import { useT } from '@/i18n/i18n';
 
@@ -13,6 +13,7 @@ type Props = {
 
 export function ConfirmDialog({ visible, title, message, confirmLabel, onConfirm, onDismiss }: Props) {
   const { t } = useT();
+  const theme = useTheme();
   return (
     <Portal>
       <Dialog visible={visible} onDismiss={onDismiss}>
@@ -22,7 +23,7 @@ export function ConfirmDialog({ visible, title, message, confirmLabel, onConfirm
         </Dialog.Content>
         <Dialog.Actions>
           <Button onPress={onDismiss}>{t('common.cancel')}</Button>
-          <Button onPress={onConfirm} textColor="#C62828">
+          <Button onPress={onConfirm} textColor={theme.colors.error}>
             {confirmLabel}
           </Button>
         </Dialog.Actions>

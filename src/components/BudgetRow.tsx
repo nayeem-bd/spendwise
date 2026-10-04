@@ -30,7 +30,9 @@ export function BudgetRow({ status, onPress }: { status: BudgetStatus; onPress: 
         <IconBadge icon={status.icon} color={status.color ?? theme.colors.primary} size={36} />
         <View style={styles.body}>
           <View style={styles.line}>
-            <Text variant="titleSmall">{name}</Text>
+            <Text variant="titleSmall" numberOfLines={1} style={styles.name}>
+              {name}
+            </Text>
             <Text variant="labelLarge" style={[styles.number, { color: left < 0 ? colors.expense : theme.colors.onSurface }]}>
               {left < 0 ? t('budget.over', { amount: f.money((-left) as Poisha) }) : t('budget.left', { amount: f.money(left) })}
             </Text>
@@ -48,8 +50,9 @@ export function BudgetRow({ status, onPress }: { status: BudgetStatus; onPress: 
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center' },
-  body: { flex: 1, gap: 6 },
-  line: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  body: { flex: 1, minWidth: 0, gap: 6 },
+  line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   bar: { height: 8, borderRadius: 4 },
+  name: { flex: 1 },
   number: { fontVariant: ['tabular-nums'] },
 });
