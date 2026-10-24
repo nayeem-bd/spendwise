@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/expo-sqlite';
 import { openDatabaseAsync } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
+import { recoverStuckTransactions } from './recoverTransactions';
 import * as schema from './schema';
 import type { LocalDb } from './types';
 
@@ -24,7 +25,7 @@ export function openDb(): Promise<Db> {
     if (Platform.OS !== 'web') {
       await expoDb.execAsync('PRAGMA journal_mode = WAL;');
     }
-    instance = createDb(expoDb);
+    instance = recoverStuckTransactions(createDb(expoDb), () => expoDb.execSync('ROLLBACK'));
     return instance;
   })();
   // Let a later call (e.g. a Retry button) try again after a failure.
