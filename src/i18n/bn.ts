@@ -9,6 +9,7 @@ export const bn: Record<StringKey, string> = {
   'tabs.reports': 'রিপোর্ট',
   'tabs.settings': 'সেটিংস',
 
+  'common.close': 'বন্ধ করুন',
   'common.cancel': 'বাতিল',
   'common.save': 'সংরক্ষণ',
   'common.delete': 'মুছুন',
