@@ -36,6 +36,7 @@ export function SyncBadge() {
   const { status, pending, error } = useSyncStore();
   const theme = useTheme();
   const [reauthOpen, setReauthOpen] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false);
   const { t, lang } = useT();
   void lang; // re-render on language change
   const { icon, label, warn } = describe(status, pending);
@@ -47,7 +48,12 @@ export function SyncBadge() {
   return (
     <>
       <Pressable
-        onPress={() => (status === 'needsLogin' ? setReauthOpen(true) : void syncNow())}
+        onPress={() => {
+          if (status === 'needsLogin') setReauthOpen(true);
+          // The label alone hides why it failed (and phones show only the icon).
+          else if (warn && error) setErrorOpen(true);
+          else void syncNow();
+        }}
         accessibilityRole="button"
         accessibilityLabel={`${label}. ${status === 'needsLogin' ? t('auth.login') : t('sync.syncNow')}`}
         accessibilityHint={error ?? undefined}
@@ -67,6 +73,25 @@ export function SyncBadge() {
         )}
       </Pressable>
       <ReauthDialog visible={reauthOpen} onDismiss={() => setReauthOpen(false)} />
+      <Portal>
+        <Dialog visible={errorOpen} onDismiss={() => setErrorOpen(false)}>
+          <Dialog.Title>{label}</Dialog.Title>
+          <Dialog.Content>
+            <Text selectable>{error ? translateError(error) : ''}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setErrorOpen(false)}>{t('common.close')}</Button>
+            <Button
+              onPress={() => {
+                setErrorOpen(false);
+                void syncNow();
+              }}
+            >
+              {t('sync.syncNow')}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </>
   );
 }

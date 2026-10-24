@@ -11,6 +11,7 @@ export const en = {
   'tabs.settings': 'Settings',
 
   // Common
+  'common.close': 'Close',
   'common.cancel': 'Cancel',
   'common.save': 'Save',
   'common.delete': 'Delete',
