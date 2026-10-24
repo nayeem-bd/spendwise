@@ -12,6 +12,7 @@ export const en = {
 
   // Common
   'common.close': 'Close',
+  'common.retry': 'Try again',
   'common.cancel': 'Cancel',
   'common.save': 'Save',
   'common.delete': 'Delete',
@@ -253,7 +254,7 @@ export const en = {
   'update.reload': 'Reload',
 
   // Errors from the data layer (key = 'error.' + the English message)
-  'error.lockedTab': 'SpendWise is already open in another tab. Close it, then reload this page.',
+  'error.lockedTab': 'SpendWise is open in another tab or window. Close it and this page will open by itself.',
   'error.Enter an amount above ৳0': 'Enter an amount above ৳0',
   'error.Enter a budget above ৳0': 'Enter a budget above ৳0',
   'error.Pick a category': 'Pick a category',
