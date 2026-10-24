@@ -10,6 +10,7 @@ export const bn: Record<StringKey, string> = {
   'tabs.settings': 'সেটিংস',
 
   'common.close': 'বন্ধ করুন',
+  'common.retry': 'আবার চেষ্টা করুন',
   'common.cancel': 'বাতিল',
   'common.save': 'সংরক্ষণ',
   'common.delete': 'মুছুন',
@@ -234,7 +235,7 @@ export const bn: Record<StringKey, string> = {
   'update.ready': 'SpendWise-এর নতুন সংস্করণ প্রস্তুত।',
   'update.reload': 'রিলোড',
 
-  'error.lockedTab': 'SpendWise অন্য একটি ট্যাবে খোলা আছে। সেটি বন্ধ করে এই পেজটি রিলোড করুন।',
+  'error.lockedTab': 'SpendWise অন্য একটি ট্যাব বা উইন্ডোতে খোলা আছে। সেটি বন্ধ করলে এই পেজটি নিজেই খুলবে।',
   'error.Enter an amount above ৳0': '৳০-এর বেশি পরিমাণ লিখুন',
   'error.Enter a budget above ৳0': '৳০-এর বেশি বাজেট লিখুন',
   'error.Pick a category': 'একটি ক্যাটাগরি বেছে নিন',
