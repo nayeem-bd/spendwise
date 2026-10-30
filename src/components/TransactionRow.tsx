@@ -66,5 +66,6 @@ export function TransactionRow({ item, showDate = false }: { item: TransactionLi
 
 const styles = StyleSheet.create({
   icon: { marginLeft: 16, justifyContent: 'center' },
-  amount: { alignSelf: 'center', fontVariant: ['tabular-nums'], fontWeight: '600' },
+  // flexShrink 0: a long description must not squeeze the amount onto two lines.
+  amount: { alignSelf: 'center', flexShrink: 0, fontVariant: ['tabular-nums'], fontWeight: '600' },
 });
