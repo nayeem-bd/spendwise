@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 
 import { PullToRefresh } from '@/components/PullToRefresh';
-import { BudgetRow } from '@/components/BudgetRow';
+import { BudgetHero, BudgetRow } from '@/components/BudgetRow';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
 import { Section } from '@/components/Section';
@@ -30,7 +30,7 @@ export default function BudgetsScreen() {
   const monthly = (
     <Section title={t('budget.wholeMonth')} style={expanded && styles.flush}>
       {total ? (
-        <BudgetRow status={total} onPress={() => edit(month, 'total')} />
+        <BudgetHero status={total} month={month} onPress={() => edit(month, 'total')} />
       ) : (
         <View style={styles.empty}>
           <Text>{t('budget.wholeMonthHint')}</Text>
