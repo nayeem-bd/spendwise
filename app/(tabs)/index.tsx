@@ -36,13 +36,13 @@ export default function HomeScreen() {
 
   const overview = (
     <>
-      <MonthSwitcher />
+      <MonthSwitcher onCard={expanded} />
       <View style={styles.chart}>
         <DonutChart
           size={chartSize}
           thickness={chartSize / 8}
           emptyColor={theme.colors.surfaceVariant}
-          segments={byCategory.map((c) => ({ key: c.categoryId ?? 'none', value: c.total, color: c.color ?? FALLBACK_COLOR }))}
+          segments={byCategory.map((c) => ({ key: c.categoryId ?? 'none', value: c.total, color: c.color ?? FALLBACK_COLOR, icon: c.icon }))}
         >
           <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant }}>
             {t('home.spent')}

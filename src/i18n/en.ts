@@ -111,6 +111,8 @@ export const en = {
   'budget.categoryTitle': '{name} budget',
   'budget.left': '{amount} left',
   'budget.over': '{amount} over',
+  'budget.perDay': '{amount}/day for {days} days',
+  'budget.perDayLast': '{amount} left for today',
   'budget.spentOf': '{spent} of {amount} · {percent}%',
   'budget.setIn': 'set in {month}',
   'budget.a11y': '{name} budget, {percent}% used',

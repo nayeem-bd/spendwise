@@ -101,6 +101,8 @@ export const bn: Record<StringKey, string> = {
   'budget.categoryTitle': '{name} বাজেট',
   'budget.left': '{amount} বাকি',
   'budget.over': '{amount} বেশি',
+  'budget.perDay': 'দিনে {amount} · আর {days} দিন',
+  'budget.perDayLast': 'আজকের জন্য {amount}',
   'budget.spentOf': '{amount}-এর মধ্যে {spent} · {percent}%',
   'budget.setIn': '{month}-এ ঠিক করা',
   'budget.a11y': '{name} বাজেট, {percent}% খরচ হয়েছে',
