@@ -24,6 +24,12 @@ export function openDb(): Promise<Db> {
     const expoDb = await openWithRetry();
     if (Platform.OS !== 'web') {
       await expoDb.execAsync('PRAGMA journal_mode = WAL;');
+    } else {
+      // Every write transaction otherwise costs ~6 OPFS flush() calls (journal create, sync, close,
+      // delete, database sync). On iOS Safari they add up to more than the 10 s sync-call limit, so
+      // saves failed with "Sync operation timeout". Writes still reach the file; the cost is that an
+      // OS crash mid-commit could corrupt the local copy, which a re-pull from the server rebuilds.
+      await expoDb.execAsync('PRAGMA synchronous = OFF; PRAGMA journal_mode = MEMORY;');
     }
     instance = recoverStuckTransactions(createDb(expoDb), () => expoDb.execSync('ROLLBACK'));
     return instance;
