@@ -9,9 +9,11 @@ import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { MonthTotals } from '@/components/MonthTotals';
 import { page, useWindowClass } from '@/components/layout';
 import { Section } from '@/components/Section';
+import { TransactionRow } from '@/components/TransactionRow';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { EmptyState } from '@/components/EmptyState';
 import { expenseByCategory, monthTotals, type CategoryTotal } from '@/lib/db/repositories/summary';
+import { listTransactions } from '@/lib/db/repositories/transactions';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
 import { useFormat } from '@/i18n/useFormat';
@@ -30,6 +32,7 @@ export default function HomeScreen() {
   const month = useMonthStore((s) => s.month);
   const totals = useLocalQuery((db) => monthTotals(db, month), ['transactions'], [month]);
   const byCategory = useLocalQuery((db) => expenseByCategory(db, month), ['transactions', 'categories'], [month]);
+  const recent = useLocalQuery((db) => listTransactions(db, { month, limit: 5 }), ['transactions', 'categories', 'accounts'], [month]);
   const { refreshing, onRefresh } = useSyncRefresh();
   // Fill small phones without overflowing; cap on tablets and desktop.
   const chartSize = expanded ? 280 : Math.max(180, Math.min(260, width - 120));
@@ -72,6 +75,15 @@ export default function HomeScreen() {
     </Section>
   );
 
+  // Tap opens the details, swipe for Edit / Delete (same rows as the Transactions tab).
+  const recentList = recent.length > 0 && (
+    <Section title={t('home.recent')} separators style={expanded && styles.flush}>
+      {recent.map((item) => (
+        <TransactionRow key={item.id} item={item} showDate />
+      ))}
+    </Section>
+  );
+
   const refresh = <PullToRefresh refreshing={refreshing} onRefresh={onRefresh} />;
 
   if (expanded) {
@@ -85,7 +97,10 @@ export default function HomeScreen() {
               <AddButtons />
             </Section>
           </View>
-          <View style={page.column}>{breakdown}</View>
+          <View style={page.column}>
+            {breakdown}
+            {recentList}
+          </View>
         </View>
       </ScrollView>
     );
@@ -96,6 +111,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={[page.list, styles.content]} refreshControl={refresh}>
         {overview}
         {breakdown}
+        {recentList}
       </ScrollView>
       <AddButtons />
     </View>

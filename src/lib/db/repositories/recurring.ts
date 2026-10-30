@@ -116,7 +116,9 @@ export function materializeRecurring(db: LocalDb, today: string): number {
     const frequency = rule.frequency ?? 'monthly';
     let date = rule.nextRun;
     for (let n = 0; date <= today && n < MAX_OCCURRENCES_PER_RUN; n++) {
-      const stamp = `${date}T00:00:00.000Z`;
+      // The earliest moment this date exists in any time zone (UTC+14). A UTC-midnight stamp was still in the
+      // future east of UTC (until 6 am in Dhaka), so a same-day delete lost LWW and the row came back.
+      const stamp = new Date(`${date}T00:00:00+14:00`).toISOString();
       const inserted = insertRowIfAbsent(db, transactions, {
         id: occurrenceId(rule.id, date),
         userId: rule.userId,
