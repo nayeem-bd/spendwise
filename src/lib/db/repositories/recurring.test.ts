@@ -155,6 +155,16 @@ describe('with two devices', () => {
   });
 });
 
+it('a delete is stamped after the row even when the row is stamped in the future', () => {
+  // Occurrences made before the UTC+14 stamp could be ahead of the clock; the delete must still win LWW.
+  const rule = monthlyRent('2099-01-15');
+  materializeRecurring(db, '2099-01-15');
+  const id = occurrenceId(rule.id, '2099-01-15');
+  const before = getTransaction(db, id)!.updatedAt;
+  deleteTransaction(db, id);
+  expect(getTransaction(db, id)!.updatedAt > before).toBe(true);
+});
+
 it('generated rows are stamped with the start of the occurrence date in the earliest time zone', () => {
   const rule = monthlyRent();
   materializeRecurring(db, '2026-09-01');
