@@ -27,12 +27,19 @@ export function recoverStuckTransactions<T extends LocalDb>(db: T, rollback: () 
   let depth = 0;
   db.transaction = ((fn, config) => {
     let began = false;
+    let failure: unknown;
     const run = () => {
       depth++;
+      failure = undefined;
       try {
         return transaction((tx) => {
           began = true;
-          return fn(tx);
+          try {
+            return fn(tx);
+          } catch (e) {
+            failure = e;
+            throw e;
+          }
         }, config);
       } finally {
         depth--;
@@ -41,6 +48,8 @@ export function recoverStuckTransactions<T extends LocalDb>(db: T, rollback: () 
     try {
       return run();
     } catch (e) {
+      // Drizzle throws the failed ROLLBACK instead of the error that caused it; surface the real one.
+      if (failure && /query 'rollback'/i.test(String((e as Error)?.message))) throw failure;
       if (began || depth > 0 || !isNestedBeginError(e)) throw e;
       console.warn('Rolling back a transaction left open on the local database', e);
       rollback();
