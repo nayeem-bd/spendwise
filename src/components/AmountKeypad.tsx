@@ -4,6 +4,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
 import { useT } from '@/i18n/i18n';
+import { haptic } from '@/lib/haptics';
 import { localDigits } from '@/utils/digits';
 
 import type { KeypadKey } from './keypad';
@@ -64,7 +65,10 @@ export function AmountKeypad({ onKey, onSubmit, dense = false }: { onKey: (key: 
           {row.map((key) => (
             <Pressable
               key={key}
-              onPress={() => onKey(key)}
+              onPress={() => {
+                haptic();
+                onKey(key);
+              }}
               accessibilityRole="button"
               accessibilityLabel={key === 'back' ? t('common.delete') : key === '.' ? t('transaction.decimalPoint') : key}
               style={({ pressed }) => [

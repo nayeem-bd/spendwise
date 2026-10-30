@@ -31,6 +31,7 @@ import { addDays, monthOf, todayISO, type Frequency } from '@/utils/date';
 import { localDigits } from '@/utils/digits';
 import { parseTaka, poishaToInput } from '@/utils/money';
 import { goBack } from '@/lib/nav';
+import { haptic } from '@/lib/haptics';
 import { page, useWindowClass } from '@/components/layout';
 
 type TxType = 'expense' | 'income' | 'transfer';
@@ -133,6 +134,7 @@ export default function TransactionScreen() {
   }
 
   const changeType = (next: TxType) => {
+    haptic('select');
     setType(next);
     setCategoryId(null); // categories are per type
   };
@@ -141,6 +143,7 @@ export default function TransactionScreen() {
     const amount = parseTaka(amountText);
     if (amount === null || amount <= 0) {
       setError(translate('error.Enter an amount above ৳0'));
+      haptic('error');
       return;
     }
     const common = { amount, accountId: selectedAccountId ?? '', note, occurredOn };
@@ -162,14 +165,17 @@ export default function TransactionScreen() {
       }
       const crossed = budgetCrossings(before, budgetStatuses(getDb(), month));
       if (crossed.length) showNotice(crossed.map(describeBudgetAlert).join('\n'));
+      haptic(crossed.length ? 'warning' : 'success');
       goBack();
     } catch (e) {
       setError(translateError(e));
+      haptic('error');
     }
   };
 
   const remove = () => {
     deleteTransaction(getDb(), params.id);
+    haptic('success');
     setConfirmDelete(false);
     goBack();
   };
