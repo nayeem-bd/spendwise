@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Button, Chip, HelperText, IconButton, SegmentedButtons, Surface, Text, TextInput, useTheme } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,7 +59,11 @@ export default function TransactionScreen() {
   const twoColumns = width >= 760;
   // Phones: the amount, keypad and Save stay docked at the bottom like Monefy,
   // unless the window is too short to leave room for the details.
-  const docked = !twoColumns && height >= 600;
+  // On web the iOS keyboard shrinks the reported height (visualViewport), which flipped the layout
+  // mid-typing, so judge by the tallest height seen at this width.
+  const tallest = useRef({ width, height });
+  if (tallest.current.width !== width || height > tallest.current.height) tallest.current = { width, height };
+  const docked = !twoColumns && tallest.current.height >= 600;
   const segmentIcons = width >= 420; // labels get cut off next to icons on small phones
   const isNew = params.id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getTransaction(getDb(), params.id)));
