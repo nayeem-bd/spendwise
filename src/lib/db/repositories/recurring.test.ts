@@ -155,9 +155,10 @@ describe('with two devices', () => {
   });
 });
 
-it('generated rows use the occurrence date as their timestamps', () => {
+it('generated rows are stamped with the start of the occurrence date in the earliest time zone', () => {
   const rule = monthlyRent();
   materializeRecurring(db, '2026-09-01');
   const row = db.select().from(transactions).all()[0];
-  expect(row).toMatchObject({ id: occurrenceId(rule.id, '2026-08-31'), createdAt: '2026-08-31T00:00:00.000Z', updatedAt: '2026-08-31T00:00:00.000Z' });
+  // 2026-08-31 00:00 at UTC+14, so a delete made that morning in Dhaka (UTC+6) is newer and wins LWW.
+  expect(row).toMatchObject({ id: occurrenceId(rule.id, '2026-08-31'), createdAt: '2026-08-30T10:00:00.000Z', updatedAt: '2026-08-30T10:00:00.000Z' });
 });
