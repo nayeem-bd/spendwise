@@ -4,7 +4,8 @@ import '@/lib/sync/backgroundTask';
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, useColorScheme, View } from 'react-native';
+import { StyleSheet, useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { PaperProvider } from 'react-native-paper';
 
 import { initAuth } from '@/lib/auth/auth';
@@ -34,12 +35,12 @@ export default function RootLayout() {
     <PaperProvider theme={theme}>
       <ThemeProvider value={navTheme(theme, dark)}>
         {/* Themed backdrop so the loading screen doesn't flash white in dark mode. */}
-        <View style={[styles.root, { backgroundColor: theme.colors.background }]}>
+        <GestureHandlerRootView style={[styles.root, { backgroundColor: theme.colors.background }]}>
           <DatabaseGate>
             <AppStack />
             <LockScreen />
           </DatabaseGate>
-        </View>
+        </GestureHandlerRootView>
         <StatusBar style={dark ? 'light' : 'dark'} />
         <UpdateSnackbar />
         <NoticeSnackbar />
