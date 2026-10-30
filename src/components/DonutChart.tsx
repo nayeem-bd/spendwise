@@ -2,7 +2,9 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 
-export type DonutSegment = { key: string; value: number; color: string };
+import { IconBadge } from './IconBadge';
+
+export type DonutSegment = { key: string; value: number; color: string; icon?: string | null };
 
 type Props = { segments: DonutSegment[]; size?: number; thickness?: number; emptyColor: string; children?: ReactNode };
 
@@ -10,7 +12,8 @@ const GAP = 2; // px between segments
 
 /**
  * A donut chart drawn with plain SVG circles (stroke-dasharray per segment),
- * so it renders the same on iOS, Android and web.
+ * so it renders the same on iOS, Android and web. Segments with an `icon` show
+ * it on the ring, like Monefy, when the arc is long enough to hold it.
  */
 export function DonutChart({ segments, size = 220, thickness = 28, emptyColor, children }: Props) {
   const radius = (size - thickness) / 2;
@@ -18,6 +21,23 @@ export function DonutChart({ segments, size = 220, thickness = 28, emptyColor, c
   const total = segments.reduce((sum, s) => sum + s.value, 0);
   const visible = segments.filter((s) => s.value > 0);
   const gap = visible.length > 1 ? GAP : 0;
+
+  const iconSize = thickness * 0.8;
+  let start = 0;
+  const icons = visible.flatMap((s) => {
+    const length = total > 0 ? (s.value / total) * circumference : 0;
+    const mid = start + length / 2;
+    start += length;
+    if (!s.icon || length < iconSize * 1.5) return [];
+    const angle = (mid / circumference) * 2 * Math.PI - Math.PI / 2;
+    const x = size / 2 + radius * Math.cos(angle) - iconSize / 2;
+    const y = size / 2 + radius * Math.sin(angle) - iconSize / 2;
+    return [
+      <View key={s.key} style={[styles.icon, { left: x, top: y }]} pointerEvents="none" importantForAccessibility="no-hide-descendants">
+        <IconBadge icon={s.icon} color={s.color} size={iconSize} />
+      </View>,
+    ];
+  });
 
   let offset = 0;
   return (
@@ -47,6 +67,7 @@ export function DonutChart({ segments, size = 220, thickness = 28, emptyColor, c
             })}
         </G>
       </Svg>
+      {icons}
       <View style={[StyleSheet.absoluteFill, styles.center]}>{children}</View>
     </View>
   );
@@ -54,4 +75,5 @@ export function DonutChart({ segments, size = 220, thickness = 28, emptyColor, c
 
 const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
+  icon: { position: 'absolute' },
 });

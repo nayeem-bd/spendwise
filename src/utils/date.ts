@@ -64,6 +64,14 @@ export function monthRange(month: string): { start: string; end: string } {
   return { start: `${month}-01`, end: `${month}-${pad(lastDay)}` };
 }
 
+/** Days of `month` still ahead, counting today: the whole month if it is in the future, 0 if it is over. */
+export function daysLeftInMonth(month: string, today = todayISO()): number {
+  const { start, end } = monthRange(month);
+  if (today > end) return 0;
+  const last = Number(end.slice(8));
+  return today < start ? last : last - Number(today.slice(8)) + 1;
+}
+
 /** "Oct 2026" */
 export function formatMonth(month: string, lang: Lang = 'en'): string {
   const [y, m] = month.split('-').map(Number);

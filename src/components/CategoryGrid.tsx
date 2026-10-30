@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
 import { useDisplayName } from '@/i18n/names';
+import { haptic } from '@/lib/haptics';
 import type { Category } from '@/lib/db/schema';
 
 import { IconBadge } from './IconBadge';
@@ -22,7 +23,10 @@ export function CategoryGrid({ categories, value, onChange }: { categories: Cate
         return (
           <Pressable
             key={c.id}
-            onPress={() => onChange(c.id)}
+            onPress={() => {
+              haptic('select');
+              onChange(c.id);
+            }}
             accessibilityRole="button"
             accessibilityState={{ selected }}
             accessibilityLabel={name(c.id, c.name)}

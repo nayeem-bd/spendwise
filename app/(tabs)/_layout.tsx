@@ -7,16 +7,21 @@ import type { IconName } from '@/components/IconBadge';
 import { useT } from '@/i18n/i18n';
 import { SyncBadge } from '@/components/SyncBadge';
 import { useWindowClass } from '@/components/layout';
+import { haptic } from '@/lib/haptics';
 
+// Filled when selected, outlined otherwise (iOS SF Symbols / Material 3 nav bar convention).
 const icon =
-  (name: IconName) =>
-  ({ color, size }: { color: ColorValue; size: number }) => <MaterialCommunityIcons name={name} color={color} size={size} />;
+  (active: IconName, inactive: IconName) =>
+  ({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) => (
+    <MaterialCommunityIcons name={focused ? active : inactive} color={color} size={size} />
+  );
 
 export default function TabsLayout() {
   const { t } = useT();
   const { compact, expanded } = useWindowClass();
   return (
     <Tabs
+      screenListeners={{ tabPress: () => haptic('select') }}
       screenOptions={{
         headerRight: () => <SyncBadge />,
         // Flat bars on the screen background, with a bold title, like native tab roots.
@@ -28,12 +33,12 @@ export default function TabsLayout() {
         tabBarLabelPosition: compact ? 'below-icon' : expanded ? 'beside-icon' : 'below-icon',
       }}
     >
-      <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: icon('chart-pie') }} />
+      <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: icon('chart-pie', 'chart-pie-outline') }} />
       <Tabs.Screen
         name="transactions"
         options={{
           title: t('tabs.transactions'),
-          tabBarIcon: icon('format-list-bulleted'),
+          tabBarIcon: icon('receipt-text', 'receipt-text-outline'),
           headerRight: () => (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <IconButton icon="magnify" accessibilityLabel={t('search.title')} onPress={() => router.push('/search')} />
@@ -42,9 +47,9 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="budgets" options={{ title: t('tabs.budgets'), tabBarIcon: icon('target') }} />
-      <Tabs.Screen name="reports" options={{ title: t('tabs.reports'), tabBarIcon: icon('chart-bar') }} />
-      <Tabs.Screen name="settings" options={{ title: t('tabs.settings'), tabBarIcon: icon('cog') }} />
+      <Tabs.Screen name="budgets" options={{ title: t('tabs.budgets'), tabBarIcon: icon('piggy-bank', 'piggy-bank-outline') }} />
+      <Tabs.Screen name="reports" options={{ title: t('tabs.reports'), tabBarIcon: icon('chart-box', 'chart-box-outline') }} />
+      <Tabs.Screen name="settings" options={{ title: t('tabs.settings'), tabBarIcon: icon('cog', 'cog-outline') }} />
     </Tabs>
   );
 }
