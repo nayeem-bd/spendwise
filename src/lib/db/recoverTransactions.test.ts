@@ -81,4 +81,14 @@ describe('recoverStuckTransactions', () => {
     ).toThrow('boom');
     expect(client.inTransaction).toBe(false);
   });
+
+  it('throws the write error, not the failed rollback that follows it', () => {
+    const { client, db } = setup();
+    expect(() =>
+      db.transaction(() => {
+        client.exec('ROLLBACK'); // SQLite already ended the transaction, so Drizzle's rollback fails
+        throw new Error('disk full');
+      }),
+    ).toThrow('disk full');
+  });
 });
