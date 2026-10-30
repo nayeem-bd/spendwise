@@ -15,6 +15,7 @@ export const en = {
   'common.retry': 'Try again',
   'common.cancel': 'Cancel',
   'common.save': 'Save',
+  'common.edit': 'Edit',
   'common.delete': 'Delete',
   'common.name': 'Name',
   'common.icon': 'Icon',

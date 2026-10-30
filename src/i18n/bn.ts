@@ -13,6 +13,7 @@ export const bn: Record<StringKey, string> = {
   'common.retry': 'আবার চেষ্টা করুন',
   'common.cancel': 'বাতিল',
   'common.save': 'সংরক্ষণ',
+  'common.edit': 'সম্পাদনা',
   'common.delete': 'মুছুন',
   'common.name': 'নাম',
   'common.icon': 'আইকন',
