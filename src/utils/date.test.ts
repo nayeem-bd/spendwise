@@ -1,4 +1,4 @@
-import { addDays, addMonths, formatDay, formatMonth, monthOf, monthRange, nextOccurrence, todayISO } from './date';
+import { addDays, addMonths, daysLeftInMonth, formatDay, formatMonth, monthOf, monthRange, nextOccurrence, todayISO } from './date';
 
 describe('dates', () => {
   it('todayISO uses the local calendar', () => {
@@ -73,5 +73,13 @@ describe('Bangla dates', () => {
     expect(formatDay('2026-10-02', '2026-10-03', 'bn')).toBe('গতকাল');
     expect(formatDay('2026-09-26', '2026-10-03', 'bn')).toBe('শনি, ২৬ সেপ্টে ২০২৬');
     expect(formatMonth('2026-10', 'bn')).toBe('অক্টো ২০২৬');
+  });
+
+  it('daysLeftInMonth counts today and stops at the month end', () => {
+    expect(daysLeftInMonth('2026-10', '2026-10-31')).toBe(1);
+    expect(daysLeftInMonth('2026-10', '2026-10-01')).toBe(31);
+    expect(daysLeftInMonth('2026-11', '2026-10-31')).toBe(30);
+    expect(daysLeftInMonth('2026-09', '2026-10-31')).toBe(0);
+    expect(daysLeftInMonth('2028-02', '2028-02-10')).toBe(20);
   });
 });
