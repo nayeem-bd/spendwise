@@ -44,6 +44,7 @@ export const en = {
   'home.balance': 'Balance',
   'home.empty': 'No spending this month yet.',
   'home.byCategory': 'Spending by category',
+  'home.recent': 'Recent',
   'home.overview': 'Overview',
 
   // Month switcher
