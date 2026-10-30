@@ -15,6 +15,16 @@ export type NewRowOf<T extends SyncedTable> = Omit<T['$inferInsert'], 'createdAt
 
 const nowIso = () => new Date().toISOString();
 
+/**
+ * Timestamp for changing a row the user is looking at: now, but always after the row's own updated_at.
+ * Otherwise a row stamped in the future (an old recurring occurrence, another device's fast clock) makes
+ * the edit lose last-write-wins on the server and the row comes back.
+ */
+const editStamp = (current: string) => {
+  const now = nowIso();
+  return now > current ? now : new Date(Date.parse(current) + 1).toISOString();
+};
+
 function tableNameOf(table: SyncedTable): SyncedTableName {
   return getTableName(table) as SyncedTableName;
 }
@@ -61,7 +71,7 @@ export function patchRow<T extends SyncedTable>(
     const existing = selectById(tx, table, id);
     if (!existing || existing.deletedAt) throw new Error(`${name} ${id} not found`);
     tx.update(table as SyncedTable)
-      .set({ ...patch, updatedAt: nowIso() })
+      .set({ ...patch, updatedAt: editStamp(existing.updatedAt) })
       .where(eq(table.id, id))
       .run();
     const saved = selectById(tx, table, id)!;
@@ -78,7 +88,7 @@ export function softDeleteRow<T extends SyncedTable>(db: LocalDb, table: T, id: 
   db.transaction((tx) => {
     const existing = selectById(tx, table, id);
     if (!existing || existing.deletedAt) return;
-    const now = nowIso();
+    const now = editStamp(existing.updatedAt);
     tx.update(table as SyncedTable)
       .set({ deletedAt: now, updatedAt: now })
       .where(eq(table.id, id))
