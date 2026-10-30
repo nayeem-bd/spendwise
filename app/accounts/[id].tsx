@@ -82,7 +82,8 @@ export default function AccountEditScreen() {
       <View style={styles.preview}>
         <IconBadge icon={icon} color={color} size={64} />
       </View>
-      <TextInput label={t('common.name')} mode="outlined" value={name} onChangeText={setName} maxLength={40} />
+      {/* autoComplete off: Safari otherwise offers the user's contact name, and the bubble lingers on later screens. */}
+      <TextInput label={t('common.name')} mode="outlined" value={name} onChangeText={setName} maxLength={40} autoComplete="off" />
       <TextInput
         label={t('account.startingBalance')}
         mode="outlined"
