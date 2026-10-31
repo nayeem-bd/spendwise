@@ -15,7 +15,7 @@ export function MonthSwitcher({ onCard = false }: { onCard?: boolean }) {
   const theme = useTheme();
   return (
     <View style={[styles.row, { backgroundColor: onCard ? theme.colors.elevation.level2 : theme.colors.elevation.level1 }]}>
-      <IconButton icon="chevron-left" size={20} accessibilityLabel={t('month.previous')} onPress={() => shift(-1)} />
+      <IconButton icon="chevron-left" size={20} style={styles.chevron} accessibilityLabel={t('month.previous')} onPress={() => shift(-1)} />
       <Button
         onPress={isCurrent ? undefined : reset}
         // Not `disabled`: that greys out the label. Tapping the current month does nothing.
@@ -25,12 +25,14 @@ export function MonthSwitcher({ onCard = false }: { onCard?: boolean }) {
       >
         {f.month(month)}
       </Button>
-      <IconButton icon="chevron-right" size={20} accessibilityLabel={t('month.next')} onPress={() => shift(1)} />
+      <IconButton icon="chevron-right" size={20} style={styles.chevron} accessibilityLabel={t('month.next')} onPress={() => shift(1)} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', borderRadius: 999, marginVertical: 8 },
+  // 44 px touch target (hitSlop is ignored on web, where iPhone users run the PWA).
+  chevron: { width: 44, height: 44, margin: 2 },
   label: { fontSize: 17, fontWeight: '600', minWidth: 96 },
 });

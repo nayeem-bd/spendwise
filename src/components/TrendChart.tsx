@@ -30,7 +30,7 @@ export function TrendChart({ data, selected }: { data: MonthPoint[]; selected: s
   const y = (v: number) => TOP_PAD + plot - (v / max) * plot;
 
   return (
-    <View onLayout={onLayout} accessibilityRole="image" accessibilityLabel={data.map((d) => t('reports.a11yMonth', { month: f.month(d.month), income: f.compact(d.income), expense: f.compact(d.expense) })).join('; ')}>
+    <View onLayout={onLayout} accessible accessibilityRole="image" accessibilityLabel={data.map((d) => t('reports.a11yMonth', { month: f.month(d.month), income: f.compact(d.income), expense: f.compact(d.expense) })).join('; ')}>
       {width > 0 && (
         <Svg width={width} height={HEIGHT}>
           <Line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke={theme.colors.outlineVariant} strokeWidth={1} />

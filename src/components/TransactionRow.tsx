@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type AccessibilityProps } from 'react-native';
 import Swipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { List, Text, useTheme } from 'react-native-paper';
 
@@ -28,8 +28,20 @@ export function TransactionRow({ item, showDate = false }: { item: TransactionLi
   const myId = useAuthStore((s) => s.user?.id);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const open = () => router.push({ pathname: '/transaction/[id]', params: { id: item.id } });
-  const row = <RowContent item={item} showDate={showDate} onPress={open} />;
-  if (item.userId !== myId) return row;
+  if (item.userId !== myId) return <RowContent item={item} showDate={showDate} onPress={open} />;
+  // Screen readers can't swipe: offer Edit / Delete as accessibility actions too.
+  const row = (
+    <RowContent
+      item={item}
+      showDate={showDate}
+      onPress={open}
+      accessibilityActions={[
+        { name: 'edit', label: t('common.edit') },
+        { name: 'delete', label: t('common.delete') },
+      ]}
+      onAccessibilityAction={(e) => (e.nativeEvent.actionName === 'edit' ? open() : setConfirmDelete(true))}
+    />
+  );
 
   const actions = (_progress: unknown, _drag: unknown, swipe: SwipeableMethods) => (
     <View style={styles.actions}>
@@ -104,7 +116,16 @@ function SwipeAction({ icon, label, color, onPress }: { icon: IconName; label: s
   );
 }
 
-function RowContent({ item, showDate, onPress }: { item: TransactionListItem; showDate: boolean; onPress: () => void }) {
+function RowContent({
+  item,
+  showDate,
+  onPress,
+  accessibilityActions,
+  onAccessibilityAction,
+}: { item: TransactionListItem; showDate: boolean; onPress: () => void } & Pick<
+  AccessibilityProps,
+  'accessibilityActions' | 'onAccessibilityAction'
+>) {
   const theme = useTheme();
   const { t } = useT();
   const f = useFormat();
@@ -150,6 +171,8 @@ function RowContent({ item, showDate, onPress }: { item: TransactionListItem; sh
         </Text>
       )}
       onPress={onPress}
+      accessibilityActions={accessibilityActions}
+      onAccessibilityAction={onAccessibilityAction}
     />
   );
 }
