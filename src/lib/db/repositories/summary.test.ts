@@ -4,9 +4,10 @@ import type { Poisha } from '@/utils/money';
 import { defaultRowId } from '../defaults';
 import { seedDefaults } from '../seed';
 import type { LocalDb } from '../types';
+import { createAccount } from './accounts';
 import { deleteCategory } from './categories';
 import { categoryComparison, dailyExpense, expenseByCategory, frequentNotes, monthlyTrend, monthTotals, spendingPace } from './summary';
-import { deleteTransaction, saveTransaction, type EntryInput } from './transactions';
+import { deleteTransaction, listTransactions, saveTransaction, type EntryInput } from './transactions';
 
 const USER = '11111111-1111-1111-1111-111111111111';
 const food = defaultRowId(USER, 'category', 'food');
@@ -116,4 +117,36 @@ it('spendingPace averages the days so far and is only for the current month', ()
   expect(spendingPace(days, '2026-10', '2026-10-15')).toEqual({ today: 30000, averagePerDay: 3300, elapsed: 15 });
   expect(spendingPace(days, '2026-10', '2026-11-02')).toBeNull();
   expect(spendingPace(days, '2026-10', '2026-09-30')).toBeNull();
+});
+
+describe('savings accounts', () => {
+  const cash = defaultRowId(USER, 'account', 'cash');
+  let dps: string;
+  beforeEach(() => {
+    dps = createAccount(db, USER, { name: 'DPS', initialBalance: 0 as Poisha, icon: 'piggy-bank', color: '#000', savings: true }).id;
+    saveTransaction(db, USER, { type: 'transfer', amount: 500000 as Poisha, accountId: cash, toAccountId: dps, note: null, occurredOn: '2026-10-05' });
+    saveTransaction(db, USER, { type: 'income', amount: 12345 as Poisha, accountId: dps, categoryId: salary, note: 'profit', occurredOn: '2026-10-06' });
+    saveTransaction(db, USER, { type: 'expense', amount: 500 as Poisha, accountId: dps, categoryId: food, note: 'fee', occurredOn: '2026-10-06' });
+  });
+
+  it('are left out of totals, categories, trend and daily spending', () => {
+    expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, balance: 5000000 - 60050 });
+    expect(expenseByCategory(db, '2026-10').find((c) => c.categoryId === food)?.total).toBe(50050);
+    expect(monthlyTrend(db, '2026-10', 1)).toEqual([{ month: '2026-10', income: 5000000, expense: 60050 }]);
+    expect(dailyExpense(db, '2026-10')[5]).toBe(0);
+  });
+
+  it('a row whose account is gone still counts in the main view', () => {
+    saveTransaction(db, USER, { type: 'expense', amount: 100 as Poisha, accountId: 'gone', categoryId: food, note: null, occurredOn: '2026-10-07' });
+    expect(monthTotals(db, '2026-10').expense).toBe(60150);
+  });
+
+  it('listTransactions splits main and savings rows; all keeps both', () => {
+    const count = (scope: 'main' | 'savings' | 'all') => listTransactions(db, { month: '2026-10', scope }).length;
+    expect(count('savings')).toBe(3);
+    expect(count('main')).toBe(4);
+    expect(count('all')).toBe(7);
+    expect(listTransactions(db, { accountId: dps }).length).toBe(3);
+    expect(listTransactions(db, { accountId: cash, scope: 'main' }).length).toBe(6); // all months, minus the DPS transfer
+  });
 });

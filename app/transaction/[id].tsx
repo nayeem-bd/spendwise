@@ -48,7 +48,8 @@ const REPEAT_OPTIONS: { value: Frequency | 'never'; label: StringKey }[] = [
 const TITLES: Record<TxType, StringKey> = { expense: 'transaction.addExpense', income: 'transaction.addIncome', transfer: 'transaction.addTransfer' };
 
 export default function TransactionScreen() {
-  const params = useLocalSearchParams<{ id: string; type?: TxType }>();
+  // accountId / toAccountId prefill a new row (the Savings screen's Deposit, Withdraw, Add profit).
+  const params = useLocalSearchParams<{ id: string; type?: TxType; accountId?: string; toAccountId?: string }>();
   const user = useUser();
   const theme = useTheme();
   const { t, lang } = useT();
@@ -75,8 +76,8 @@ export default function TransactionScreen() {
   const [type, setType] = useState<TxType>(existing?.type ?? params.type ?? 'expense');
   const [amountText, setAmountText] = useState(existing ? poishaToInput(existing.amount) : '');
   const [categoryId, setCategoryId] = useState<string | null>(existing?.categoryId ?? null);
-  const [accountId, setAccountId] = useState<string | null>(existing?.accountId ?? null);
-  const [toAccountId, setToAccountId] = useState<string | null>(existing?.toAccountId ?? null);
+  const [accountId, setAccountId] = useState<string | null>(existing?.accountId ?? params.accountId ?? null);
+  const [toAccountId, setToAccountId] = useState<string | null>(existing?.toAccountId ?? params.toAccountId ?? null);
   const [occurredOn, setOccurredOn] = useState(existing?.occurredOn ?? todayISO());
   const [note, setNote] = useState(existing?.note ?? '');
   const [repeat, setRepeat] = useState<Frequency | 'never'>('never');
@@ -97,11 +98,15 @@ export default function TransactionScreen() {
     ['attachments'],
     [params.id],
   );
-  // Default to Cash, else the first account.
+  // Savings accounts only take transfers, unless this row is already on one (e.g. profit added from Savings).
+  const regular = accounts.filter((a) => !a.savings);
+  const entryAccounts = accounts.filter((a) => !a.savings || a.id === accountId);
+  // Default to Cash, else the first regular account.
   const selectedAccountId =
-    accountId ?? accounts.find((a) => a.id === defaultRowId(user.id, 'account', 'cash'))?.id ?? accounts[0]?.id ?? null;
-  // Transfers default to the first other account.
-  const selectedToAccountId = toAccountId ?? accounts.find((a) => a.id !== selectedAccountId)?.id ?? null;
+    accountId ?? regular.find((a) => a.id === defaultRowId(user.id, 'account', 'cash'))?.id ?? regular[0]?.id ?? accounts[0]?.id ?? null;
+  // Transfers default to the first other account, a regular one if there is one.
+  const selectedToAccountId =
+    toAccountId ?? (regular.find((a) => a.id !== selectedAccountId) ?? accounts.find((a) => a.id !== selectedAccountId))?.id ?? null;
 
   if (!isNew && (!existing || existing.deletedAt)) {
     return <Text style={styles.missing}>{t('transaction.missing')}</Text>;
@@ -145,6 +150,8 @@ export default function TransactionScreen() {
     haptic('select');
     setType(next);
     setCategoryId(null); // categories are per type
+    // A savings account picked for a transfer isn't offered for expense/income: fall back to the default.
+    if (next !== 'transfer' && accountId !== existing?.accountId && accounts.find((a) => a.id === accountId)?.savings) setAccountId(null);
   };
 
   const save = () => {
@@ -248,7 +255,7 @@ export default function TransactionScreen() {
           <Text variant="titleSmall">{t('transaction.category')}</Text>
           <CategoryGrid categories={categories} value={categoryId} onChange={setCategoryId} />
           <Text variant="titleSmall">{t('transaction.account')}</Text>
-          <AccountChips accounts={accounts} value={selectedAccountId} onChange={setAccountId} />
+          <AccountChips accounts={entryAccounts} value={selectedAccountId} onChange={setAccountId} />
         </>
       )}
 

@@ -25,7 +25,7 @@ export default function TransactionsScreen() {
   const colors = moneyColors(theme.dark);
   const month = useMonthStore((s) => s.month);
   const sections = useLocalQuery(
-    (db) => groupByDay(listTransactions(db, { month })),
+    (db) => groupByDay(listTransactions(db, { month, scope: 'main' })),
     ['transactions', 'categories', 'accounts'],
     [month],
   );

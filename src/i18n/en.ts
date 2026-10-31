@@ -311,6 +311,27 @@ export const en = {
   'reports.paceSummary': '{spent} by day {day} · {previous} at the same point in {month}',
   'reports.daily': 'Daily spending',
   'reports.dayA11y': '{day}: spent {amount}',
+
+  // Savings
+  'account.savings': 'Savings account',
+  'account.savingsHint': 'For DPS, FDR or an emergency fund. Its money stays out of your income, expenses and budgets, and shows only under Settings → Savings.',
+  'account.savingsChange': 'Change',
+  'account.savingsTitle': 'Make this a savings account?',
+  'account.savingsMessage': "All of this account's past entries move out of your income and expense totals, including past months.",
+  'account.unsavingsTitle': 'Make this a regular account?',
+  'account.unsavingsMessage': "All of this account's past entries count in your income and expense totals again, including past months.",
+  'savings.title': 'Savings',
+  'savings.hint': 'DPS, FDR, emergency fund',
+  'savings.total': 'Total saved',
+  'savings.accounts': 'Savings accounts',
+  'savings.newAccount': 'Add savings account',
+  'savings.deposit': 'Deposit',
+  'savings.withdraw': 'Withdraw',
+  'savings.profit': 'Add profit',
+  'savings.all': 'All',
+  'savings.history': 'History',
+  'savings.empty': 'No savings accounts yet. Add one for your DPS, FDR or emergency fund.',
+  'savings.noHistory': 'No deposits yet.',
 } as const;
 
 export type StringKey = keyof typeof en;

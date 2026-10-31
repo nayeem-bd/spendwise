@@ -80,6 +80,7 @@ function AppStack() {
         <Stack.Screen name="accounts/index" />
         <Stack.Screen name="accounts/[id]" />
         <Stack.Screen name="budget/edit" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="savings/index" />
         <Stack.Screen name="recurring/index" />
         <Stack.Screen name="recurring/[id]" />
         <Stack.Screen name="search" />

@@ -1,7 +1,7 @@
 -- Run with: npx supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(16);
 
 insert into auth.users (id, email, instance_id, aud, role) values
   ('11111111-1111-1111-1111-111111111111', 'a@test.local', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated'),
@@ -52,6 +52,20 @@ select public.push_changes($$[{"table": "categories", "row": {"id": "c0000000-00
   "user_id": "11111111-1111-1111-1111-111111111111", "name": "Pets", "type": "expense", "icon": "paw", "color": "#795548",
   "sort_order": 11, "archived": false, "created_at": "2026-10-03T10:00:00Z", "updated_at": "2026-10-03T10:00:00Z", "deleted_at": null}}]$$::jsonb);
 select is((select count(*)::int from categories where name = 'Pets'), 1, 're-pushing is idempotent');
+
+-- Savings flag: stored when sent, kept when an older app version leaves it out.
+select public.push_changes($$[{"table": "accounts", "row": {"id": "a0000000-0000-0000-0000-000000000001",
+  "user_id": "11111111-1111-1111-1111-111111111111", "name": "DPS", "initial_balance": "0", "archived": false, "savings": true,
+  "created_at": "2026-10-03T10:00:00Z", "updated_at": "2026-10-03T10:00:00Z", "deleted_at": null}}]$$::jsonb);
+select ok((select savings from accounts where id = 'a0000000-0000-0000-0000-000000000001'), 'savings flag is stored');
+select public.push_changes($$[{"table": "accounts", "row": {"id": "a0000000-0000-0000-0000-000000000001",
+  "user_id": "11111111-1111-1111-1111-111111111111", "name": "DPS 2", "initial_balance": "0", "archived": false,
+  "created_at": "2026-10-03T10:00:00Z", "updated_at": "2026-10-03T11:00:00Z", "deleted_at": null}}]$$::jsonb);
+select ok((select savings and name = 'DPS 2' from accounts where id = 'a0000000-0000-0000-0000-000000000001'), 'edit without savings keeps the flag');
+select public.push_changes($$[{"table": "accounts", "row": {"id": "a0000000-0000-0000-0000-000000000002",
+  "user_id": "11111111-1111-1111-1111-111111111111", "name": "Old app", "initial_balance": "0", "archived": false,
+  "created_at": "2026-10-03T10:00:00Z", "updated_at": "2026-10-03T10:00:00Z", "deleted_at": null}}]$$::jsonb);
+select ok((select not savings from accounts where id = 'a0000000-0000-0000-0000-000000000002'), 'insert without savings defaults to false');
 
 -- All or nothing: a bad row rolls back the whole push.
 select throws_ok($$ select public.push_changes('[

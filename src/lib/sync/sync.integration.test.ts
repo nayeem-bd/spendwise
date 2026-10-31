@@ -12,9 +12,10 @@ import { bytesToBase64 } from '@/utils/base64';
 
 import { downloadAttachment, supabaseAttachmentStore, uploadPendingAttachments } from './attachments';
 import { deleteTransaction, getTransaction, listTransactions, saveTransaction, type EntryInput } from '@/lib/db/repositories/transactions';
+import { monthTotals } from '@/lib/db/repositories/summary';
 import { seedDefaults } from '@/lib/db/seed';
 import type { LocalDb } from '@/lib/db/types';
-import { listAccountsWithBalance } from '@/lib/db/repositories/accounts';
+import { createAccount, listAccountsWithBalance } from '@/lib/db/repositories/accounts';
 import { listMembers, purgeEndedMemberships } from '@/lib/db/repositories/sharing';
 import { syncState } from '@/lib/db/schema';
 import { createTestDb } from '@/test/testDb';
@@ -179,7 +180,7 @@ describeIf('sync against local Supabase', () => {
     await sync(member);
     await sync(owner);
     expect(listTransactions(owner.db).map((t) => t.note).sort()).toEqual(['member rickshaw', 'owner groceries']);
-    expect(listAccountsWithBalance(owner.db).find((a) => a.id === sharedCash)?.balance).toBe(-105000);
+    expect(listAccountsWithBalance(owner.db, false).find((a) => a.id === sharedCash)?.balance).toBe(-105000);
 
     expect((await member.client.rpc('leave_account', { p_account: sharedCash })).error).toBeNull();
     await sync(member);
@@ -187,6 +188,21 @@ describeIf('sync against local Supabase', () => {
     expect(listTransactions(member.db).map((t) => t.note)).toEqual(['member rickshaw']); // only their own
     await sync(owner);
     expect(listTransactions(owner.db).map((t) => t.note).sort()).toEqual(['member rickshaw', 'owner groceries']);
+  });
+
+  it('a savings account syncs its flag, and its rows stay out of totals on the other device', async () => {
+    // Own user, so the profit row doesn't show up in other tests' lists.
+    const saver = await signUpUser();
+    const [phoneA, phoneB, user] = [await device(saver), await device(saver), saver];
+    const dps = createAccount(phoneA.db, user.userId, { name: 'DPS', initialBalance: 0 as Poisha, icon: 'piggy-bank', color: '#000', savings: true });
+    saveTransaction(phoneA.db, user.userId, {
+      type: 'income', amount: 9900 as Poisha, accountId: dps.id,
+      categoryId: defaultRowId(user.userId, 'category', 'salary'), note: 'profit', occurredOn: '2025-03-10',
+    });
+    await sync(phoneA);
+    await sync(phoneB);
+    expect(listAccountsWithBalance(phoneB.db, true).map((a) => [a.name, a.balance])).toEqual([['DPS', 9900]]);
+    expect(monthTotals(phoneB.db, '2025-03').income).toBe(0);
   });
 
   it('another user sees none of it', async () => {

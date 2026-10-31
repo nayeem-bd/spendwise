@@ -13,6 +13,7 @@ import {
   deleteAccount,
   listAccounts,
   listAccountsWithBalance,
+  updateAccount,
 } from './accounts';
 import { createCategory, deleteCategory, listCategories, updateCategory } from './categories';
 import { deleteTransaction, groupByDay, listTransactions, saveTransaction, type EntryInput } from './transactions';
@@ -144,7 +145,7 @@ describe('account balances are computed from transactions', () => {
     deleteTransaction(db, deleted.id);
     saveTransaction(db, USER, expense({ accountId: bkash(), amount: p(700) }));
 
-    const balances = Object.fromEntries(listAccountsWithBalance(db).map((a) => [a.name, a.balance]));
+    const balances = Object.fromEntries(listAccountsWithBalance(db, false).map((a) => [a.name, a.balance]));
     expect(balances).toEqual({ Cash: 0, bKash: -700, Bank: 0, Wallet: 100000 - 25050 + 500000 });
   });
 
@@ -152,6 +153,18 @@ describe('account balances are computed from transactions', () => {
     const [first, ...rest] = listAccounts(db);
     rest.forEach((a) => deleteAccount(db, a.id));
     expect(() => deleteAccount(db, first!.id)).toThrow('You need at least one account');
+  });
+  it('savings accounts are listed apart, and do not count as the last regular account', () => {
+    const dps = createAccount(db, USER, { name: 'DPS', initialBalance: p(0), icon: 'piggy-bank', color: '#000', savings: true });
+    saveTransaction(db, USER, { type: 'transfer', amount: p(500000), accountId: cash(), toAccountId: dps.id, note: null, occurredOn: '2026-10-05' });
+    expect(listAccountsWithBalance(db, true).map((a) => [a.name, a.balance])).toEqual([['DPS', 500000]]);
+    expect(listAccountsWithBalance(db, false).map((a) => a.name)).not.toContain('DPS');
+
+    const [first, ...rest] = listAccounts(db).filter((a) => !a.savings);
+    rest.forEach((a) => deleteAccount(db, a.id));
+    expect(() => deleteAccount(db, first!.id)).toThrow('You need at least one account');
+    expect(() => updateAccount(db, first!.id, { savings: true })).toThrow('You need at least one account');
+    deleteAccount(db, dps.id); // savings accounts can always go
   });
 });
 
@@ -196,7 +209,7 @@ describe('transfers', () => {
   it('moves money between accounts without changing the total', () => {
     saveTransaction(db, USER, { ...expense({ amount: p(100000) }), type: 'income', categoryId: salary() });
     transfer(30000);
-    const balances = Object.fromEntries(listAccountsWithBalance(db).map((a) => [a.name, a.balance]));
+    const balances = Object.fromEntries(listAccountsWithBalance(db, false).map((a) => [a.name, a.balance]));
     expect(balances).toEqual({ Bank: 0, Cash: 70000, bKash: 30000 });
   });
 

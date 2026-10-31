@@ -40,7 +40,7 @@ export default function HomeScreen() {
   const month = useMonthStore((s) => s.month);
   const totals = useLocalQuery((db) => monthTotals(db, month), ['transactions'], [month]);
   const byCategory = useLocalQuery((db) => expenseByCategory(db, month), ['transactions', 'categories'], [month]);
-  const recent = useLocalQuery((db) => listTransactions(db, { month, limit: 5 }), ['transactions', 'categories', 'accounts'], [month]);
+  const recent = useLocalQuery((db) => listTransactions(db, { month, limit: 5, scope: 'main' }), ['transactions', 'categories', 'accounts'], [month]);
   const { refreshing, onRefresh } = useSyncRefresh();
   // Fill small phones without overflowing; cap on tablets and desktop.
   const chartSize = expanded ? 280 : Math.max(180, Math.min(260, width - 120));
