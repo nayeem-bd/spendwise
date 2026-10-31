@@ -32,6 +32,8 @@ export const accounts = sqliteTable('accounts', {
   icon: text('icon'),
   color: text('color'),
   archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+  /** DPS, FDR, emergency fund…: its rows are left out of income/expense totals. */
+  savings: integer('savings', { mode: 'boolean' }).notNull().default(false),
 });
 
 export const categories = sqliteTable('categories', {

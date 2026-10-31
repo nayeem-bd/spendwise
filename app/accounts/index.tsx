@@ -16,7 +16,7 @@ import { addPoisha } from '@/utils/money';
 import { page } from '@/components/layout';
 
 export default function AccountsScreen() {
-  const accounts = useLocalQuery(listAccountsWithBalance, ['accounts', 'transactions']);
+  const accounts = useLocalQuery((db) => listAccountsWithBalance(db, false), ['accounts', 'transactions']);
   const { t } = useT();
   const f = useFormat();
   const name = useDisplayName();

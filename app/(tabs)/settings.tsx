@@ -96,6 +96,13 @@ export default function SettingsScreen() {
           right={chevron}
           onPress={() => router.push('/accounts')}
         />
+        <List.Item
+          title={t('savings.title')}
+          description={t('savings.hint')}
+          left={rowIcon('piggy-bank', '#2E7D32')}
+          right={chevron}
+          onPress={() => router.push('/savings')}
+        />
         <JoinSharedAccount left={rowIcon('account-multiple-plus', '#00897B')} />
         <List.Item
           title={t('recurring.title')}

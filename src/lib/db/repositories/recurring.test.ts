@@ -96,7 +96,7 @@ it('recurring transfers move money between accounts', () => {
     'weekly',
   );
   materializeRecurring(db, '2026-10-20'); // Oct 1, 8, 15
-  const balances = Object.fromEntries(listAccountsWithBalance(db).map((a) => [a.name, a.balance]));
+  const balances = Object.fromEntries(listAccountsWithBalance(db, false).map((a) => [a.name, a.balance]));
   expect(balances).toMatchObject({ Bank: -300000, Cash: 300000 });
 });
 

@@ -1,12 +1,14 @@
-import { and, between, count, desc, eq, isNotNull, isNull, max, sql, sum } from 'drizzle-orm';
+import { and, between, count, desc, eq, isNotNull, isNull, max, not, sql, sum } from 'drizzle-orm';
 
 import { addMonths, monthOf, monthRange } from '@/utils/date';
 import { addPoisha, type Poisha } from '@/utils/money';
 
 import { categories, transactions } from '../schema';
+import { touchesSavings } from './accounts';
 import type { LocalDb } from '../types';
 
 // Totals are always computed from transactions, never stored.
+// Rows on savings accounts (DPS, emergency fund…) are left out of every total.
 
 export type MonthTotals = { income: Poisha; expense: Poisha; balance: Poisha };
 
@@ -21,7 +23,7 @@ export type CategoryTotal = {
 
 const inMonth = (month: string) => {
   const { start, end } = monthRange(month);
-  return and(isNull(transactions.deletedAt), between(transactions.occurredOn, start, end));
+  return and(isNull(transactions.deletedAt), between(transactions.occurredOn, start, end), not(touchesSavings));
 };
 
 export function monthTotals(db: LocalDb, month: string): MonthTotals {
@@ -68,7 +70,7 @@ export function monthlyTrend(db: LocalDb, endMonth: string, count = 6): MonthPoi
   const rows = db
     .select({ month, type: transactions.type, total: sum(transactions.amount).mapWith(Number) })
     .from(transactions)
-    .where(and(isNull(transactions.deletedAt), between(transactions.occurredOn, start, end)))
+    .where(and(isNull(transactions.deletedAt), between(transactions.occurredOn, start, end), not(touchesSavings)))
     .groupBy(month, transactions.type)
     .all();
   return months.map((m) => {

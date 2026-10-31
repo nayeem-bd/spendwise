@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Button, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, HelperText, List, Switch, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { IconBadge } from '@/components/IconBadge';
@@ -17,7 +17,7 @@ import { parseTaka, poishaToInput, ZERO } from '@/utils/money';
 import { page } from '@/components/layout';
 
 export default function AccountEditScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, savings: savingsParam } = useLocalSearchParams<{ id: string; savings?: string }>();
   const user = useUser();
   const { t } = useT();
   const theme = useTheme();
@@ -29,6 +29,8 @@ export default function AccountEditScreen() {
   const [balanceText, setBalanceText] = useState(existing ? poishaToInput(existing.initialBalance) : '');
   const [icon, setIcon] = useState(existing?.icon ?? 'wallet');
   const [color, setColor] = useState(existing?.color ?? COLORS[6]!);
+  const [savings, setSavings] = useState(existing?.savings ?? savingsParam === '1');
+  const [confirmSavings, setConfirmSavings] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -58,8 +60,8 @@ export default function AccountEditScreen() {
     }
     try {
       const db = getDb();
-      if (isNew) createAccount(db, user.id, { name, initialBalance, icon, color });
-      else updateAccount(db, id, { name, initialBalance, icon, color });
+      if (isNew) createAccount(db, user.id, { name, initialBalance, icon, color, savings });
+      else updateAccount(db, id, { name, initialBalance, icon, color, savings });
       goBack();
     } catch (e) {
       setError(translateError(e));
@@ -92,6 +94,19 @@ export default function AccountEditScreen() {
         keyboardType="decimal-pad"
         placeholder="0"
       />
+      <List.Item
+        title={t('account.savings')}
+        description={t('account.savingsHint')}
+        descriptionNumberOfLines={3}
+        right={() => (
+          <Switch
+            value={savings}
+            // Existing account: its past rows move in or out of the totals, so ask first.
+            onValueChange={(v) => (isNew ? setSavings(v) : setConfirmSavings(true))}
+          />
+        )}
+        style={styles.switchRow}
+      />
       <Text variant="titleSmall">{t('common.icon')}</Text>
       <IconPicker icons={ACCOUNT_ICONS} value={icon} color={color} onChange={setIcon} />
       <Text variant="titleSmall">{t('common.colour')}</Text>
@@ -106,6 +121,17 @@ export default function AccountEditScreen() {
           {t('account.delete')}
         </Button>
       )}
+      <ConfirmDialog
+        visible={confirmSavings}
+        title={savings ? t('account.unsavingsTitle') : t('account.savingsTitle')}
+        message={savings ? t('account.unsavingsMessage') : t('account.savingsMessage')}
+        confirmLabel={t('account.savingsChange')}
+        onConfirm={() => {
+          setSavings(!savings);
+          setConfirmSavings(false);
+        }}
+        onDismiss={() => setConfirmSavings(false)}
+      />
       <ConfirmDialog
         visible={confirmDelete}
         title={t('account.deleteTitle')}
@@ -122,4 +148,5 @@ const styles = StyleSheet.create({
   container: { padding: 16, gap: 12 },
   preview: { alignItems: 'center', marginVertical: 8, gap: 8 },
   missing: { padding: 24, textAlign: 'center' },
+  switchRow: { paddingHorizontal: 0 },
 });

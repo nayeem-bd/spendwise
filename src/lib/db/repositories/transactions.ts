@@ -1,4 +1,4 @@
-import { and, between, desc, eq, getTableColumns, gte, inArray, isNull, lte, or, sql, type SQL } from 'drizzle-orm';
+import { and, between, desc, eq, getTableColumns, gte, inArray, isNull, lte, not, or, sql, type SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/sqlite-core';
 
 import { monthRange } from '@/utils/date';
@@ -9,6 +9,7 @@ import { newId } from '../id';
 import { accounts, categories, recurringRules, transactions, type Transaction } from '../schema';
 import type { LocalDb } from '../types';
 import { patchRow, softDeleteRow, upsertRow } from '../write';
+import { touchesSavings } from './accounts';
 import { deleteAttachmentsOf } from './attachments';
 import { ValidationError } from './validate';
 
@@ -99,14 +100,31 @@ function selectList(db: LocalDb, where: SQL | undefined, limit: number): Transac
     .all();
 }
 
+export type ListOptions = {
+  month?: string; // 'YYYY-MM'
+  limit?: number;
+  /** 'main': hide rows touching a savings account; 'savings': only those; 'all' (default): everything, e.g. CSV. */
+  scope?: 'main' | 'savings' | 'all';
+  /** Only rows from or to this account. */
+  accountId?: string;
+};
+
 /**
- * Newest first, optionally for one month ('YYYY-MM'). Category/account names
- * come from rows even if those were deleted.
+ * Newest first, optionally for one month. Category/account names come from
+ * rows even if those were deleted.
  */
-export function listTransactions(db: LocalDb, options: { month?: string; limit?: number } = {}): TransactionListItem[] {
-  const { month, limit = 1000 } = options;
+export function listTransactions(db: LocalDb, options: ListOptions = {}): TransactionListItem[] {
+  const { month, limit = 1000, scope = 'all', accountId } = options;
   const range = month ? monthRange(month) : null;
-  return selectList(db, range ? between(transactions.occurredOn, range.start, range.end) : undefined, limit);
+  return selectList(
+    db,
+    and(
+      range ? between(transactions.occurredOn, range.start, range.end) : undefined,
+      scope === 'main' ? not(touchesSavings) : scope === 'savings' ? touchesSavings : undefined,
+      accountId ? or(eq(transactions.accountId, accountId), eq(transactions.toAccountId, accountId)) : undefined,
+    ),
+    limit,
+  );
 }
 
 export type TransactionFilter = {
