@@ -12,10 +12,11 @@ import type { Poisha } from '@/utils/money';
 import { DonutChart } from './DonutChart';
 import { IconBadge } from './IconBadge';
 
-const WARNING_COLOR = '#F9A825';
+// Darker amber in light mode so the fill keeps 3:1 against the bar track.
+const warningColor = (dark: boolean) => (dark ? '#F9A825' : '#B26A00');
 
-const levelColor = (status: BudgetStatus, colors: ReturnType<typeof moneyColors>) =>
-  status.level === 'over' ? colors.expense : status.level === 'warning' ? WARNING_COLOR : colors.income;
+const levelColor = (status: BudgetStatus, colors: ReturnType<typeof moneyColors>, dark: boolean) =>
+  status.level === 'over' ? colors.expense : status.level === 'warning' ? warningColor(dark) : colors.income;
 
 /**
  * A budget with a progress bar: green under 80%, amber from 80%, red at 100%.
@@ -29,7 +30,7 @@ export function BudgetRow({ status, month, onPress }: { status: BudgetStatus; mo
   const displayName = useDisplayName();
   const name = status.categoryId === null ? t('budget.wholeMonth') : displayName(status.categoryId, status.name);
   const colors = moneyColors(theme.dark);
-  const barColor = levelColor(status, colors);
+  const barColor = levelColor(status, colors, theme.dark);
   const left = (status.amount - status.spent) as Poisha;
   const percent = Math.round(status.ratio * 100);
   const elapsed = monthElapsed(month);
@@ -75,7 +76,7 @@ export function BudgetHero({ status, month, onPress }: { status: BudgetStatus; m
   const left = (status.amount - status.spent) as Poisha;
   const percent = Math.round(status.ratio * 100);
   const days = daysLeftInMonth(month);
-  const color = levelColor(status, colors);
+  const color = levelColor(status, colors, theme.dark);
 
   return (
     <TouchableRipple onPress={onPress} accessibilityRole="button" accessibilityLabel={t('budget.a11y', { name: t('budget.wholeMonth'), percent })}>

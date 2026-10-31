@@ -42,14 +42,14 @@ export function SpendingCalendar({ month, days }: { month: string; days: Poisha[
             <View key={iso} style={styles.cell} accessible accessibilityLabel={label}>
               <View style={[styles.day, iso === today && { borderColor: theme.colors.primary, borderWidth: 2 }]}>
                 {c.value > 0 && (
-                  // sqrt so a few big days don't wash out the rest.
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.expense, opacity: 0.12 + 0.6 * Math.sqrt(c.value / max) }]} />
+                  // sqrt so a few big days don't wash out the rest. Lower cap in dark mode keeps light text at 4.5:1.
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.expense, opacity: 0.12 + (theme.dark ? 0.33 : 0.6) * Math.sqrt(c.value / max) }]} />
                 )}
                 <Text variant="labelMedium" style={iso > today && { color: theme.colors.onSurfaceVariant }}>
                   {f.num(c.day)}
                 </Text>
                 {c.value > 0 && (
-                  <Text style={styles.amount} numberOfLines={1} adjustsFontSizeToFit>
+                  <Text style={styles.amount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.9}>
                     {f.compact(c.value)}
                   </Text>
                 )}
@@ -68,5 +68,5 @@ const styles = StyleSheet.create({
   cell: { width: `${100 / 7}%`, padding: 2 },
   head: { textAlign: 'center', paddingBottom: 4 },
   day: { aspectRatio: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingHorizontal: 2 },
-  amount: { fontSize: 9, fontVariant: ['tabular-nums'] },
+  amount: { fontSize: 11, fontVariant: ['tabular-nums'] },
 });

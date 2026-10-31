@@ -2,6 +2,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { ComponentProps } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { iconColorOn } from '@/utils/color';
+
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 const isIconName = (name: string): name is IconName => name in MaterialCommunityIcons.glyphMap;
@@ -22,9 +24,10 @@ export function IconBadge({
   square?: boolean;
 }) {
   const name: IconName = icon && isIconName(icon) ? icon : 'tag';
+  const background = color ?? '#757575';
   return (
-    <View style={[styles.circle, { width: size, height: size, borderRadius: square ? size * 0.28 : size / 2, backgroundColor: color ?? '#757575' }]}>
-      <MaterialCommunityIcons name={name} size={size * 0.55} color="#fff" />
+    <View style={[styles.circle, { width: size, height: size, borderRadius: square ? size * 0.28 : size / 2, backgroundColor: background }]}>
+      <MaterialCommunityIcons name={name} size={size * 0.55} color={iconColorOn(background)} />
     </View>
   );
 }
