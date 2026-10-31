@@ -8,7 +8,7 @@ import { AmountKeypad } from '@/components/AmountKeypad';
 import { CategoryGrid } from '@/components/CategoryGrid';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ReceiptStrip } from '@/components/ReceiptStrip';
-import { applyKey, displayAmountText } from '@/components/keypad';
+import { applyKey, displayAmountText, evaluateAmount, hasOperator } from '@/components/keypad';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { defaultRowId } from '@/lib/db/defaults';
@@ -19,6 +19,7 @@ import { addAttachment, deleteAttachment, listAttachments } from '@/lib/db/repos
 import { budgetCrossings, budgetStatuses, type BudgetStatus } from '@/lib/db/repositories/budgets';
 import { listCategories } from '@/lib/db/repositories/categories';
 import { createRecurring, getRecurring, materializeRecurring } from '@/lib/db/repositories/recurring';
+import { frequentNotes } from '@/lib/db/repositories/summary';
 import { deleteTransaction, getTransaction, saveTransaction, type TransactionInput } from '@/lib/db/repositories/transactions';
 import type { Account } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
@@ -29,7 +30,7 @@ import { showNotice } from '@/store/notice';
 import { moneyColors } from '@/theme';
 import { addDays, monthOf, todayISO, type Frequency } from '@/utils/date';
 import { localDigits } from '@/utils/digits';
-import { parseTaka, poishaToInput } from '@/utils/money';
+import { poishaToInput } from '@/utils/money';
 import { goBack } from '@/lib/nav';
 import { haptic } from '@/lib/haptics';
 import { page, useWindowClass } from '@/components/layout';
@@ -84,6 +85,11 @@ export default function TransactionScreen() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const categoryType = type === 'income' ? 'income' : 'expense';
+  const noteSuggestions = useLocalQuery(
+    (db) => (type !== 'transfer' && categoryId ? frequentNotes(db, categoryId) : []),
+    ['transactions'],
+    [type, categoryId],
+  );
   const categories = useLocalQuery((db) => listCategories(db, categoryType, user.id), ['categories'], [categoryType]);
   const accounts = useLocalQuery(listAccounts, ['accounts']);
   const savedPhotoIds = useLocalQuery(
@@ -142,7 +148,7 @@ export default function TransactionScreen() {
   };
 
   const save = () => {
-    const amount = parseTaka(amountText);
+    const amount = evaluateAmount(amountText);
     if (amount === null || amount <= 0) {
       setError(translate('error.Enter an amount above ৳0'));
       haptic('error');
@@ -203,16 +209,29 @@ export default function TransactionScreen() {
     />
   );
 
+  const result = hasOperator(amountText) ? evaluateAmount(amountText) : null;
   const amountDisplay = (
-    <Text
-      variant="displaySmall"
-      style={[styles.amount, { color }]}
-      numberOfLines={1}
-      adjustsFontSizeToFit
-      accessibilityLabel={t('transaction.amount')}
-    >
-      ৳{localDigits(displayAmountText(amountText), lang)}
-    </Text>
+    <View>
+      <Text
+        variant={result === null ? 'displaySmall' : 'headlineMedium'}
+        style={[styles.amount, { color }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        accessibilityLabel={t('transaction.amount')}
+      >
+        ৳{localDigits(displayAmountText(amountText), lang)}
+      </Text>
+      {result !== null && (
+        <Text
+          variant="titleMedium"
+          style={[styles.result, { color: result > 0 ? color : theme.colors.error }]}
+          accessibilityLiveRegion="polite"
+          accessibilityLabel={t('transaction.result', { amount: f.money(result) })}
+        >
+          = {f.money(result)}
+        </Text>
+      )}
+    </View>
   );
 
   const details = (
@@ -242,6 +261,15 @@ export default function TransactionScreen() {
       </View>
 
       <TextInput label={t('transaction.note')} mode="outlined" value={note} onChangeText={setNote} maxLength={200} />
+      {noteSuggestions.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.noteChips} accessibilityLabel={t('transaction.quickNotes')}>
+          {noteSuggestions.map((n) => (
+            <Chip key={n} compact selected={note.trim() === n} showSelectedOverlay icon="history" onPress={() => setNote(note.trim() === n ? '' : n)}>
+              {n}
+            </Chip>
+          ))}
+        </ScrollView>
+      )}
 
       {!(isNew && repeat !== 'never') && (
         <ReceiptStrip
@@ -428,6 +456,8 @@ const styles = StyleSheet.create({
   column: { flex: 1, minWidth: 0, gap: 12 },
   entryColumn: { maxWidth: 420 },
   amount: { textAlign: 'center', fontVariant: ['tabular-nums'], marginVertical: 8 },
+  result: { textAlign: 'center', fontVariant: ['tabular-nums'], fontWeight: '700', marginTop: -6 },
+  noteChips: { gap: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   dateRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
   saveContent: { height: 48 },

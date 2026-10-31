@@ -1,18 +1,20 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
+import { router } from 'expo-router';
+import { Platform, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Button, Text, useTheme } from 'react-native-paper';
 
 import { PullToRefresh } from '@/components/PullToRefresh';
 import { AddButtons } from '@/components/AddButtons';
 import { DonutChart } from '@/components/DonutChart';
 import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
-import { MonthTotals } from '@/components/MonthTotals';
+import { MonthTotals, Total } from '@/components/MonthTotals';
 import { page, useWindowClass } from '@/components/layout';
 import { Section } from '@/components/Section';
 import { TransactionRow } from '@/components/TransactionRow';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { EmptyState } from '@/components/EmptyState';
-import { expenseByCategory, monthTotals, type CategoryTotal } from '@/lib/db/repositories/summary';
+import { budgetStatuses } from '@/lib/db/repositories/budgets';
+import { dailyExpense, expenseByCategory, monthTotals, spendingPace, type CategoryTotal } from '@/lib/db/repositories/summary';
 import { listTransactions } from '@/lib/db/repositories/transactions';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
@@ -20,8 +22,14 @@ import { useFormat } from '@/i18n/useFormat';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { useMonthStore } from '@/store/month';
 import { moneyColors } from '@/theme';
+import { daysLeftInMonth, todayISO } from '@/utils/date';
+import type { Poisha } from '@/utils/money';
 
 const FALLBACK_COLOR = '#9E9E9E';
+
+// Desktop web: the overview and + / − stay in view while the category list scrolls.
+// RN's types have no 'sticky', react-native-web passes it through to CSS.
+const stickyOnWeb = Platform.OS === 'web' ? ({ position: 'sticky', top: 0 } as unknown as ViewStyle) : null;
 
 export default function HomeScreen() {
   const theme = useTheme();
@@ -62,6 +70,7 @@ export default function HomeScreen() {
         </DonutChart>
       </View>
       <MonthTotals totals={totals} onCard={expanded} />
+      <PaceRow month={month} onCard={expanded} />
     </>
   );
 
@@ -77,7 +86,16 @@ export default function HomeScreen() {
 
   // Tap opens the details, swipe for Edit / Delete (same rows as the Transactions tab).
   const recentList = recent.length > 0 && (
-    <Section title={t('home.recent')} separators style={expanded && styles.flush}>
+    <Section
+      title={t('home.recent')}
+      action={
+        <Button compact onPress={() => router.navigate('/transactions')}>
+          {t('home.seeAll')}
+        </Button>
+      }
+      separators
+      style={expanded && styles.flush}
+    >
       {recent.map((item) => (
         <TransactionRow key={item.id} item={item} showDate />
       ))}
@@ -91,7 +109,7 @@ export default function HomeScreen() {
     return (
       <ScrollView contentContainerStyle={[page.wide, styles.content]} refreshControl={refresh}>
         <View style={page.columns}>
-          <View style={page.column}>
+          <View style={[page.column, stickyOnWeb]}>
             <Section title={t('home.overview')} style={styles.flush}>
               {overview}
               <AddButtons />
@@ -118,6 +136,40 @@ export default function HomeScreen() {
   );
 }
 
+/**
+ * This month's pace: spent today, the average per day so far, and (with a
+ * monthly budget) what can still be spent per day, like Money Lover and Copilot.
+ */
+function PaceRow({ month, onCard }: { month: string; onCard: boolean }) {
+  const theme = useTheme();
+  const { t } = useT();
+  const f = useFormat();
+  const colors = moneyColors(theme.dark);
+  const today = todayISO();
+  const pace = useLocalQuery((db) => spendingPace(dailyExpense(db, month), month, today), ['transactions'], [month, today]);
+  const budget = useLocalQuery((db) => budgetStatuses(db, month).total, ['budgets', 'transactions'], [month]);
+  if (!pace) return null;
+  const tile = onCard ? theme.colors.elevation.level2 : theme.colors.elevation.level1;
+  const left = budget ? budget.amount - budget.spent : 0;
+  const days = daysLeftInMonth(month, today);
+  return (
+    <View style={styles.pace}>
+      <Total label={t('home.today')} icon="calendar-today" value={f.money(pace.today)} color={theme.colors.onSurface} dense tile={tile} />
+      <Total label={t('home.avgPerDay')} icon="chart-line-variant" value={f.money(pace.averagePerDay)} color={theme.colors.onSurface} dense tile={tile} />
+      {budget && left > 0 && days > 0 && (
+        <Total
+          label={t('home.leftPerDay')}
+          icon="piggy-bank-outline"
+          value={f.money(Math.floor(left / days) as Poisha)}
+          color={pace.averagePerDay > left / days ? colors.expense : colors.income}
+          dense
+          tile={tile}
+        />
+      )}
+    </View>
+  );
+}
+
 /** A category's spending with a bar showing its share of the month. */
 function CategoryShare({ item, total }: { item: CategoryTotal; total: number }) {
   const theme = useTheme();
@@ -131,9 +183,14 @@ function CategoryShare({ item, total }: { item: CategoryTotal; total: number }) 
       <IconBadge icon={item.icon} color={color} size={36} />
       <View style={styles.shareBody}>
         <View style={styles.shareLine}>
-          <Text variant="bodyLarge" numberOfLines={1} style={styles.shareName}>
-            {name(item.categoryId, item.name) || t('common.uncategorized')}
-          </Text>
+          <View style={styles.shareName}>
+            <Text variant="bodyLarge" numberOfLines={1}>
+              {name(item.categoryId, item.name) || t('common.uncategorized')}
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              {item.count === 1 ? t('home.count1') : t('home.count', { count: item.count })}
+            </Text>
+          </View>
           <Text variant="bodyLarge" style={[styles.number, styles.shareAmount]}>
             {f.money(item.total)}
           </Text>
@@ -161,7 +218,8 @@ const styles = StyleSheet.create({
   share: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   shareBody: { flex: 1, minWidth: 0, gap: 6 },
   shareLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  shareName: { flex: 1 },
+  shareName: { flex: 1, minWidth: 0 },
+  pace: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 12, marginTop: -4 },
   shareAmount: { fontWeight: '600' },
   track: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 3 },

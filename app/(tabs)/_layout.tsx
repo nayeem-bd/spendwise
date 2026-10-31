@@ -8,6 +8,7 @@ import { useT } from '@/i18n/i18n';
 import { SyncBadge } from '@/components/SyncBadge';
 import { useWindowClass } from '@/components/layout';
 import { haptic } from '@/lib/haptics';
+import { toggleHideAmounts, usePrivacyStore } from '@/store/privacy';
 
 // Filled when selected, outlined otherwise (iOS SF Symbols / Material 3 nav bar convention).
 const icon =
@@ -33,7 +34,19 @@ export default function TabsLayout() {
         tabBarLabelPosition: compact ? 'below-icon' : expanded ? 'beside-icon' : 'below-icon',
       }}
     >
-      <Tabs.Screen name="index" options={{ title: t('tabs.home'), tabBarIcon: icon('chart-pie', 'chart-pie-outline') }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: t('tabs.home'),
+          tabBarIcon: icon('chart-pie', 'chart-pie-outline'),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <HideAmountsButton />
+              <SyncBadge />
+            </View>
+          ),
+        }}
+      />
       <Tabs.Screen
         name="transactions"
         options={{
@@ -51,5 +64,21 @@ export default function TabsLayout() {
       <Tabs.Screen name="reports" options={{ title: t('tabs.reports'), tabBarIcon: icon('chart-box', 'chart-box-outline') }} />
       <Tabs.Screen name="settings" options={{ title: t('tabs.settings'), tabBarIcon: icon('cog', 'cog-outline') }} />
     </Tabs>
+  );
+}
+
+function HideAmountsButton() {
+  const { t } = useT();
+  const hidden = usePrivacyStore((s) => s.hidden);
+  return (
+    <IconButton
+      icon={hidden ? 'eye-off-outline' : 'eye-outline'}
+      accessibilityLabel={t(hidden ? 'privacy.show' : 'privacy.hide')}
+      accessibilityState={{ selected: hidden }}
+      onPress={() => {
+        haptic('select');
+        toggleHideAmounts();
+      }}
+    />
   );
 }

@@ -1,12 +1,12 @@
 import { StyleSheet, View } from 'react-native';
-import { ProgressBar, Text, TouchableRipple, useTheme } from 'react-native-paper';
+import { Text, TouchableRipple, useTheme } from 'react-native-paper';
 
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
 import { useFormat } from '@/i18n/useFormat';
 import type { BudgetStatus } from '@/lib/db/repositories/budgets';
 import { moneyColors } from '@/theme';
-import { daysLeftInMonth } from '@/utils/date';
+import { daysLeftInMonth, monthElapsed } from '@/utils/date';
 import type { Poisha } from '@/utils/money';
 
 import { DonutChart } from './DonutChart';
@@ -17,8 +17,12 @@ const WARNING_COLOR = '#F9A825';
 const levelColor = (status: BudgetStatus, colors: ReturnType<typeof moneyColors>) =>
   status.level === 'over' ? colors.expense : status.level === 'warning' ? WARNING_COLOR : colors.income;
 
-/** A budget with a progress bar: green under 80%, amber from 80%, red at 100%. */
-export function BudgetRow({ status, onPress }: { status: BudgetStatus; onPress: () => void }) {
+/**
+ * A budget with a progress bar: green under 80%, amber from 80%, red at 100%.
+ * In the current month a tick marks how far through the month today is (like
+ * Cashew), so a fill past the tick means spending ahead of pace.
+ */
+export function BudgetRow({ status, month, onPress }: { status: BudgetStatus; month: string; onPress: () => void }) {
   const theme = useTheme();
   const { t } = useT();
   const f = useFormat();
@@ -28,6 +32,7 @@ export function BudgetRow({ status, onPress }: { status: BudgetStatus; onPress: 
   const barColor = levelColor(status, colors);
   const left = (status.amount - status.spent) as Poisha;
   const percent = Math.round(status.ratio * 100);
+  const elapsed = monthElapsed(month);
 
   return (
     <TouchableRipple onPress={onPress} accessibilityRole="button" accessibilityLabel={t('budget.a11y', { name, percent })}>
@@ -42,7 +47,12 @@ export function BudgetRow({ status, onPress }: { status: BudgetStatus; onPress: 
               {left < 0 ? t('budget.over', { amount: f.money((-left) as Poisha) }) : t('budget.left', { amount: f.money(left) })}
             </Text>
           </View>
-          <ProgressBar progress={Math.min(status.ratio, 1)} color={barColor} style={styles.bar} />
+          <View style={[styles.bar, { backgroundColor: theme.colors.surfaceVariant }]}>
+            <View style={[styles.fill, { width: `${Math.min(status.ratio, 1) * 100}%`, backgroundColor: barColor }]} />
+            {elapsed !== null && elapsed < 1 && (
+              <View style={[styles.marker, { left: `${elapsed * 100}%`, backgroundColor: theme.colors.onSurface }]} />
+            )}
+          </View>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
             {t('budget.spentOf', { spent: f.money(status.spent), amount: f.money(status.amount), percent })}
             {status.carriedFrom ? ` · ${t('budget.setIn', { month: f.month(status.carriedFrom) })}` : ''}
@@ -113,6 +123,8 @@ const styles = StyleSheet.create({
   body: { flex: 1, minWidth: 0, gap: 6 },
   line: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   bar: { height: 8, borderRadius: 4 },
+  fill: { height: '100%', borderRadius: 4 },
+  marker: { position: 'absolute', top: -2, bottom: -2, width: 2, marginLeft: -1, borderRadius: 1, opacity: 0.6 },
   name: { flex: 1 },
   number: { fontVariant: ['tabular-nums'] },
   bold: { fontWeight: '700' },

@@ -27,20 +27,23 @@ export function MonthTotals({ totals, dense = false, onCard = false }: { totals:
         color={totals.balance < 0 ? colors.expense : theme.colors.onSurface}
         dense={dense}
         tile={tile}
+        // Savings rate, like Monarch: the share of income not spent.
+        caption={!dense && totals.income > 0 && totals.balance > 0 ? t('home.saved', { percent: Math.round((totals.balance / totals.income) * 100) }) : undefined}
       />
     </View>
   );
 }
 
-type TotalProps = { label: string; icon: string; value: string; color: string; dense: boolean; tile: string };
+export type TotalProps = { label: string; icon: string; value: string; color: string; dense: boolean; tile: string; caption?: string };
 
-function Total({ label, icon, value, color, dense, tile }: TotalProps) {
+/** One labelled number in a rounded tile. */
+export function Total({ label, icon, value, color, dense, tile, caption }: TotalProps) {
   const theme = useTheme();
   return (
     <View
       style={[styles.total, dense && styles.denseTotal, { backgroundColor: tile }]}
       accessible
-      accessibilityLabel={`${label} ${value}`}
+      accessibilityLabel={[label, value, caption].filter(Boolean).join(' ')}
     >
       <View style={styles.label}>
         <List.Icon icon={icon} color={color} style={styles.icon} />
@@ -51,6 +54,11 @@ function Total({ label, icon, value, color, dense, tile }: TotalProps) {
       <Text variant={dense ? 'titleSmall' : 'titleMedium'} style={[styles.number, { color }]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
+      {caption && (
+        <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>
+          {caption}
+        </Text>
+      )}
     </View>
   );
 }
