@@ -6,7 +6,7 @@ import { monthRange } from '@/utils/date';
 import type { Poisha } from '@/utils/money';
 
 import { newId } from '../id';
-import { accounts, categories, transactions, type Transaction } from '../schema';
+import { accounts, categories, recurringRules, transactions, type Transaction } from '../schema';
 import type { LocalDb } from '../types';
 import { patchRow, softDeleteRow, upsertRow } from '../write';
 import { deleteAttachmentsOf } from './attachments';
@@ -85,11 +85,14 @@ function selectList(db: LocalDb, where: SQL | undefined, limit: number): Transac
       categoryColor: categories.color,
       accountName: accounts.name,
       toAccountName: toAccounts.name,
+      // Only while the rule still exists: rows from a deleted rule are plain transactions to the user.
+      recurringId: recurringRules.id,
     })
     .from(transactions)
     .leftJoin(categories, eq(categories.id, transactions.categoryId))
     .leftJoin(accounts, eq(accounts.id, transactions.accountId))
     .leftJoin(toAccounts, eq(toAccounts.id, transactions.toAccountId))
+    .leftJoin(recurringRules, and(eq(recurringRules.id, transactions.recurringId), isNull(recurringRules.deletedAt)))
     .where(and(isNull(transactions.deletedAt), where))
     .orderBy(desc(transactions.occurredOn), desc(transactions.createdAt))
     .limit(limit)

@@ -155,6 +155,15 @@ describe('with two devices', () => {
   });
 });
 
+it('lists rows from a deleted rule as plain transactions', () => {
+  const rule = monthlyRent();
+  materializeRecurring(db, '2026-09-05');
+  expect(listTransactions(db)[0]?.recurringId).toBe(rule.id);
+  deleteRecurring(db, rule.id);
+  expect(listTransactions(db)).toHaveLength(1);
+  expect(listTransactions(db)[0]?.recurringId).toBeNull();
+});
+
 it('a delete is stamped after the row even when the row is stamped in the future', () => {
   // Occurrences made before the UTC+14 stamp could be ahead of the clock; the delete must still win LWW.
   const rule = monthlyRent('2099-01-15');
