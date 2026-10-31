@@ -5,7 +5,7 @@ import { defaultRowId } from '../defaults';
 import { seedDefaults } from '../seed';
 import type { LocalDb } from '../types';
 import { deleteCategory } from './categories';
-import { categoryComparison, expenseByCategory, monthlyTrend, monthTotals } from './summary';
+import { categoryComparison, dailyExpense, expenseByCategory, frequentNotes, monthlyTrend, monthTotals, spendingPace } from './summary';
 import { deleteTransaction, saveTransaction, type EntryInput } from './transactions';
 
 const USER = '11111111-1111-1111-1111-111111111111';
@@ -44,11 +44,31 @@ it('monthTotals for an empty month is zero', () => {
   expect(monthTotals(db, '2025-01')).toEqual({ income: 0, expense: 0, balance: 0 });
 });
 
-it('expenseByCategory sorts biggest first', () => {
-  expect(expenseByCategory(db, '2026-10').map((c) => [c.name, c.total])).toEqual([
-    ['Food & Groceries', 50050],
-    ['Transport', 10000],
+it('expenseByCategory sorts biggest first and counts transactions', () => {
+  expect(expenseByCategory(db, '2026-10').map((c) => [c.name, c.total, c.count])).toEqual([
+    ['Food & Groceries', 50050, 2],
+    ['Transport', 10000, 1],
   ]);
+});
+
+it('dailyExpense has one zero-filled entry per day of the month', () => {
+  const days = dailyExpense(db, '2026-10');
+  expect(days).toHaveLength(31);
+  expect([days[0], days[14], days[30], days[1]]).toEqual([20050, 30000, 10000, 0]);
+  expect(dailyExpense(db, '2026-02')).toHaveLength(28);
+});
+
+it('frequentNotes ranks the notes of a category by use, then by recency', () => {
+  const note = (text: string | null, occurredOn: string, categoryId = food) =>
+    saveTransaction(db, USER, { type: 'expense', amount: 100 as Poisha, categoryId, accountId: defaultRowId(USER, 'account', 'cash'), note: text, occurredOn });
+  note('Lunch', '2026-10-02');
+  note('Lunch', '2026-10-03');
+  note('Bazar', '2026-10-01');
+  note('Tea', '2026-10-05');
+  note('Rickshaw', '2026-10-05', transport);
+  deleteTransaction(db, note('Gone', '2026-10-09').id);
+  expect(frequentNotes(db, food)).toEqual(['Lunch', 'Tea', 'Bazar']);
+  expect(frequentNotes(db, food, 1)).toEqual(['Lunch']);
 });
 
 it('deleted categories keep their name in the breakdown', () => {
@@ -89,4 +109,11 @@ it('categoryComparison lines up this month against last, including categories on
     ['Food & Groceries', 77777, 50050],
     ['Transport', 0, 10000],
   ]);
+});
+
+it('spendingPace averages the days so far and is only for the current month', () => {
+  const days = dailyExpense(db, '2026-10');
+  expect(spendingPace(days, '2026-10', '2026-10-15')).toEqual({ today: 30000, averagePerDay: 3300, elapsed: 15 });
+  expect(spendingPace(days, '2026-10', '2026-11-02')).toBeNull();
+  expect(spendingPace(days, '2026-10', '2026-09-30')).toBeNull();
 });

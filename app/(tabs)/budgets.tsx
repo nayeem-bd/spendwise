@@ -57,7 +57,7 @@ export default function BudgetsScreen() {
           {addButton}
         </View>
       ) : (
-        [...categories.map((c) => <BudgetRow key={c.categoryId} status={c} onPress={() => edit(month, c.categoryId!)} />), addButton]
+        [...categories.map((c) => <BudgetRow key={c.categoryId} status={c} month={month} onPress={() => edit(month, c.categoryId!)} />), addButton]
       )}
     </Section>
   );

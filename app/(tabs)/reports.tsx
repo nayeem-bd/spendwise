@@ -6,17 +6,20 @@ import { IconBadge } from '@/components/IconBadge';
 import { MonthSwitcher } from '@/components/MonthSwitcher';
 import { page, useWindowClass } from '@/components/layout';
 import { Section } from '@/components/Section';
+import { PaceChart } from '@/components/PaceChart';
+import { SpendingCalendar } from '@/components/SpendingCalendar';
 import { TrendChart } from '@/components/TrendChart';
 import { useSyncRefresh } from '@/components/useSyncRefresh';
 import { EmptyState } from '@/components/EmptyState';
-import { categoryComparison, monthlyTrend } from '@/lib/db/repositories/summary';
+import { budgetStatuses } from '@/lib/db/repositories/budgets';
+import { categoryComparison, dailyExpense, monthlyTrend } from '@/lib/db/repositories/summary';
 import { useT } from '@/i18n/i18n';
 import { useDisplayName } from '@/i18n/names';
 import { useFormat } from '@/i18n/useFormat';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
 import { useMonthStore } from '@/store/month';
 import { moneyColors } from '@/theme';
-import { addMonths } from '@/utils/date';
+import { addMonths, monthOf, todayISO } from '@/utils/date';
 import type { Poisha } from '@/utils/money';
 
 export default function ReportsScreen() {
@@ -28,9 +31,31 @@ export default function ReportsScreen() {
   const month = useMonthStore((s) => s.month);
   const trend = useLocalQuery((db) => monthlyTrend(db, month, 6), ['transactions'], [month]);
   const comparison = useLocalQuery((db) => categoryComparison(db, month), ['transactions', 'categories'], [month]);
+  const daily = useLocalQuery((db) => dailyExpense(db, month), ['transactions'], [month]);
+  const dailyBefore = useLocalQuery((db) => dailyExpense(db, addMonths(month, -1)), ['transactions'], [month]);
+  const budget = useLocalQuery((db) => budgetStatuses(db, month).total?.amount ?? null, ['budgets'], [month]);
   const { refreshing, onRefresh } = useSyncRefresh();
   const previous = f.month(addMonths(month, -1));
   const { expanded } = useWindowClass();
+  const today = todayISO();
+  const isFuture = month > monthOf(today);
+  const upToDay = monthOf(today) === month ? Number(today.slice(8)) : daily.length;
+
+  const paceSection = !isFuture && (
+    <Section title={t('reports.pace')} style={expanded && styles.flush}>
+      <View style={styles.chart}>
+        <PaceChart current={daily} previous={dailyBefore} previousLabel={previous} upToDay={upToDay} budget={budget} />
+      </View>
+    </Section>
+  );
+
+  const calendarSection = (
+    <Section title={t('reports.daily')} style={expanded && styles.flush}>
+      <View style={styles.calendar}>
+        <SpendingCalendar month={month} days={daily} />
+      </View>
+    </Section>
+  );
 
   const trendSection = (
     <Section title={t('reports.last6')} style={expanded && styles.flush}>
@@ -83,13 +108,21 @@ export default function ReportsScreen() {
       <MonthSwitcher />
       {expanded ? (
         <View style={page.columns}>
-          <View style={page.column}>{trendSection}</View>
-          <View style={page.column}>{comparisonSection}</View>
+          <View style={page.column}>
+            {paceSection}
+            {trendSection}
+          </View>
+          <View style={page.column}>
+            {calendarSection}
+            {comparisonSection}
+          </View>
         </View>
       ) : (
         <>
-          {trendSection}
+          {paceSection}
+          {calendarSection}
           {comparisonSection}
+          {trendSection}
         </>
       )}
     </ScrollView>
@@ -100,6 +133,7 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 32 },
   flush: { marginHorizontal: 0 },
   chart: { padding: 16 },
+  calendar: { padding: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
   rowBody: { flex: 1, minWidth: 0, gap: 2 },
   rowEnd: { alignItems: 'flex-end', gap: 2 },

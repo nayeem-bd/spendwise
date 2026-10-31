@@ -37,6 +37,7 @@ export const en = {
   'auth.newHere': 'New here?',
   'auth.createAccount': 'Create an account',
   'auth.haveAccount': 'Already have an account?',
+  'auth.tagline': 'Track every taka in two taps. Works offline.',
   'auth.checkEmail': 'Check your email to confirm your account, then log in.',
 
   // Home
@@ -46,6 +47,7 @@ export const en = {
   'home.byCategory': 'Spending by category',
   'home.recent': 'Recent',
   'home.overview': 'Overview',
+  'home.seeAll': 'See all',
 
   // Month switcher
   'month.previous': 'Previous month',
@@ -288,6 +290,27 @@ export const en = {
     'Set up a screen lock (PIN, fingerprint or Face ID) on this device first.',
   'error.Allow notifications for SpendWise in your phone settings to get reminders.':
     'Allow notifications for SpendWise in your phone settings to get reminders.',
+  // Keypad, pace, privacy, calendar
+  'keypad.plus': 'Plus',
+  'keypad.minus': 'Minus',
+  'keypad.times': 'Times',
+  'keypad.divide': 'Divided by',
+  'transaction.result': 'Total {amount}',
+  'transaction.quickNotes': 'Quick notes',
+  'home.today': 'Today',
+  'home.avgPerDay': 'Avg/day',
+  'home.leftPerDay': 'Left/day',
+  'home.saved': '{percent}% saved',
+  'home.count1': '1 transaction',
+  'home.count': '{count} transactions',
+  'privacy.hide': 'Hide amounts',
+  'privacy.show': 'Show amounts',
+  'reports.pace': 'Spending pace',
+  'reports.thisMonth': 'This month',
+  'reports.budgetPace': 'Budget pace',
+  'reports.paceSummary': '{spent} by day {day} · {previous} at the same point in {month}',
+  'reports.daily': 'Daily spending',
+  'reports.dayA11y': '{day}: spent {amount}',
 } as const;
 
 export type StringKey = keyof typeof en;

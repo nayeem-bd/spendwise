@@ -1,7 +1,8 @@
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
-import { Button, HelperText, Text, TextInput } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Button, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
 
 import { translateError, useT } from '@/i18n/i18n';
 
@@ -15,6 +16,7 @@ type Props = {
 /** Email + password form shared by login and signup. onSubmit may return an info message. */
 export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
   const { t } = useT();
+  const theme = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -38,7 +40,19 @@ export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
       <View style={styles.form}>
-        <Text variant="headlineMedium" style={styles.title}>
+        <View style={styles.brand}>
+          {/* assets/icon.png is still Expo's placeholder, so draw the mark here. */}
+          <View style={[styles.logo, { backgroundColor: theme.colors.primary }]} importantForAccessibility="no-hide-descendants">
+            <MaterialCommunityIcons name="chart-donut" size={40} color={theme.colors.onPrimary} />
+          </View>
+          <Text variant="titleLarge" style={styles.brandName}>
+            SpendWise
+          </Text>
+          <Text variant="bodyMedium" style={[styles.tagline, { color: theme.colors.onSurfaceVariant }]}>
+            {t('auth.tagline')}
+          </Text>
+        </View>
+        <Text variant="headlineSmall" style={styles.title}>
           {title}
         </Text>
         <TextInput
@@ -69,7 +83,7 @@ export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
         <Text style={styles.footer}>
           {footer.text}{' '}
           <Link href={footer.href} replace>
-            <Text style={styles.link}>{footer.linkLabel}</Text>
+            <Text style={[styles.link, { color: theme.colors.primary }]}>{footer.linkLabel}</Text>
           </Link>
         </Text>
       </View>
@@ -80,6 +94,10 @@ export function AuthForm({ title, submitLabel, onSubmit, footer }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center' },
   form: { gap: 12, padding: 24, width: '100%', maxWidth: 420, alignSelf: 'center' },
+  brand: { alignItems: 'center', gap: 6, marginBottom: 16 },
+  logo: { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  brandName: { fontWeight: '800' },
+  tagline: { textAlign: 'center' },
   title: { marginBottom: 8 },
   footer: { textAlign: 'center', marginTop: 8 },
   link: { fontWeight: '700', textDecorationLine: 'underline' },

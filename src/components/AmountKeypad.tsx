@@ -3,24 +3,37 @@ import { useEffect, useRef } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
-import { useT } from '@/i18n/i18n';
+import { useT, type StringKey } from '@/i18n/i18n';
 import { haptic } from '@/lib/haptics';
 import { localDigits } from '@/utils/digits';
 
-import type { KeypadKey } from './keypad';
+import { isOperator, type KeypadKey, type Operator } from './keypad';
 
+// Calculator column on the right, like Monefy: work out "120 + 45" or "3 × 250" while adding.
 const ROWS: KeypadKey[][] = [
-  ['1', '2', '3'],
-  ['4', '5', '6'],
-  ['7', '8', '9'],
-  ['.', '0', 'back'],
+  ['1', '2', '3', '÷'],
+  ['4', '5', '6', '×'],
+  ['7', '8', '9', '-'],
+  ['.', '0', 'back', '+'],
 ];
+
+const OPERATOR_LABELS: Record<Operator, { glyph: string; a11y: StringKey }> = {
+  '+': { glyph: '+', a11y: 'keypad.plus' },
+  '-': { glyph: '−', a11y: 'keypad.minus' },
+  '×': { glyph: '×', a11y: 'keypad.times' },
+  '÷': { glyph: '÷', a11y: 'keypad.divide' },
+};
 
 const KEYBOARD_KEYS: Record<string, KeypadKey> = {
   ...Object.fromEntries([...'0123456789'].map((d) => [d, d as KeypadKey])),
   '.': '.',
   ',': '.',
   Backspace: 'back',
+  '+': '+',
+  '-': '-',
+  '*': '×',
+  x: '×',
+  '/': '÷',
 };
 
 /**
@@ -62,7 +75,9 @@ export function AmountKeypad({ onKey, onSubmit, dense = false }: { onKey: (key: 
     <View style={styles.pad}>
       {ROWS.map((row) => (
         <View key={row.join('')} style={styles.row}>
-          {row.map((key) => (
+          {row.map((key) => {
+            const operator = isOperator(key) ? OPERATOR_LABELS[key] : null;
+            return (
             <Pressable
               key={key}
               onPress={() => {
@@ -70,20 +85,34 @@ export function AmountKeypad({ onKey, onSubmit, dense = false }: { onKey: (key: 
                 onKey(key);
               }}
               accessibilityRole="button"
-              accessibilityLabel={key === 'back' ? t('common.delete') : key === '.' ? t('transaction.decimalPoint') : key}
+              accessibilityLabel={
+                operator ? t(operator.a11y) : key === 'back' ? t('common.delete') : key === '.' ? t('transaction.decimalPoint') : key
+              }
               style={({ pressed }) => [
                 styles.key,
+                operator && styles.operatorKey,
                 dense && styles.denseKey,
-                { backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.elevation.level1 },
+                {
+                  backgroundColor: pressed
+                    ? theme.colors.surfaceVariant
+                    : operator
+                      ? theme.colors.secondaryContainer
+                      : theme.colors.elevation.level1,
+                },
               ]}
             >
               {key === 'back' ? (
                 <MaterialCommunityIcons name="backspace-outline" size={24} color={theme.colors.onSurface} />
+              ) : operator ? (
+                <Text variant="headlineSmall" style={{ color: theme.colors.onSecondaryContainer }}>
+                  {operator.glyph}
+                </Text>
               ) : (
                 <Text variant="headlineSmall">{localDigits(key, lang)}</Text>
               )}
             </Pressable>
-          ))}
+            );
+          })}
         </View>
       ))}
     </View>
@@ -94,5 +123,6 @@ const styles = StyleSheet.create({
   pad: { gap: 8 },
   row: { flexDirection: 'row', gap: 8 },
   key: { flex: 1, height: 52, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  operatorKey: { flex: 0.7 },
   denseKey: { height: 44 },
 });

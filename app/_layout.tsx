@@ -20,6 +20,7 @@ import { NoticeSnackbar } from '@/components/NoticeSnackbar';
 import { UpdateSnackbar } from '@/components/UpdateSnackbar';
 import { registerServiceWorker } from '@/lib/pwa';
 import { startSync } from '@/lib/sync/syncEngine';
+import { loadPrivacyPreference } from '@/store/privacy';
 import { loadThemePreference, useThemeStore } from '@/store/theme';
 import { darkTheme, lightTheme, navTheme } from '@/theme';
 
@@ -54,6 +55,7 @@ function AppStack() {
   const userId = useAuthStore((s) => s.user?.id);
   useEffect(() => {
     loadThemePreference();
+    loadPrivacyPreference();
     loadLanguage();
     initAppLock();
     initAuth();

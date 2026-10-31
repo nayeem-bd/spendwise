@@ -107,3 +107,12 @@ export function nextOccurrence(iso: string, frequency: Frequency, anchorDay: num
   const day = Math.min(anchorDay, daysInMonth(year, month));
   return `${year}-${pad(month)}-${pad(day)}`;
 }
+
+/** How far through `month` today is (0–1, counting today as done), or null unless it is the current month. */
+export function monthElapsed(month: string, today = todayISO()): number | null {
+  if (monthOf(today) !== month) return null;
+  return Number(today.slice(8)) / Number(monthRange(month).end.slice(8));
+}
+
+/** Short weekday names starting Sunday, for calendar headers. */
+export const weekdayNames = (lang: Lang = 'en'): readonly string[] => NAMES[lang].days;

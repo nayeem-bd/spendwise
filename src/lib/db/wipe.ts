@@ -5,7 +5,7 @@ import { attachmentFiles, localMeta, outbox, syncState, syncedTables } from './s
 import type { LocalDb } from './types';
 
 /** local_meta keys that belong to the device, not the user, and survive sign-out. */
-export const DEVICE_META_KEYS = ['theme', 'appLock', 'reminder', 'language'];
+export const DEVICE_META_KEYS = ['theme', 'appLock', 'reminder', 'language', 'hideAmounts'];
 
 /**
  * Logout: removes every local row (PROJECT_PLAN 5.1). This clears the

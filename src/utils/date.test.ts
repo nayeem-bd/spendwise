@@ -1,4 +1,4 @@
-import { addDays, addMonths, daysLeftInMonth, formatDay, formatMonth, monthOf, monthRange, nextOccurrence, todayISO } from './date';
+import { addDays, addMonths, daysLeftInMonth, formatDay, monthElapsed, formatMonth, monthOf, monthRange, nextOccurrence, todayISO } from './date';
 
 describe('dates', () => {
   it('todayISO uses the local calendar', () => {
@@ -82,4 +82,10 @@ describe('Bangla dates', () => {
     expect(daysLeftInMonth('2026-09', '2026-10-31')).toBe(0);
     expect(daysLeftInMonth('2028-02', '2028-02-10')).toBe(20);
   });
+});
+
+it('monthElapsed is the share of the current month done, null for other months', () => {
+  expect(monthElapsed('2026-10', '2026-10-31')).toBe(1);
+  expect(monthElapsed('2026-02', '2026-02-14')).toBe(0.5);
+  expect(monthElapsed('2026-09', '2026-10-01')).toBeNull();
 });
