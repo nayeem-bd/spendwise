@@ -29,7 +29,14 @@ export default function RecurringEditScreen() {
   const [error, setError] = useState<string | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
 
-  if (!rule) return <Text style={styles.missing}>{t('recurring.missing')}</Text>;
+  if (!rule) {
+    return (
+      <>
+        <Stack.Screen options={{ title: t('recurring.titleOne') }} />
+        <Text style={styles.missing}>{t('recurring.missing')}</Text>
+      </>
+    );
+  }
 
   const what =
     rule.template.type === 'transfer'

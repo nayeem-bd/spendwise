@@ -18,7 +18,7 @@ import { memberEmail, sharingSummary } from '@/lib/db/repositories/sharing';
 import { addAttachment, deleteAttachment, listAttachments } from '@/lib/db/repositories/attachments';
 import { budgetCrossings, budgetStatuses, type BudgetStatus } from '@/lib/db/repositories/budgets';
 import { listCategories } from '@/lib/db/repositories/categories';
-import { createRecurring, materializeRecurring } from '@/lib/db/repositories/recurring';
+import { createRecurring, getRecurring, materializeRecurring } from '@/lib/db/repositories/recurring';
 import { deleteTransaction, getTransaction, saveTransaction, type TransactionInput } from '@/lib/db/repositories/transactions';
 import type { Account } from '@/lib/db/schema';
 import { useLocalQuery } from '@/lib/db/useLocalQuery';
@@ -68,6 +68,8 @@ export default function TransactionScreen() {
   const segmentIcons = width >= 420; // labels get cut off next to icons on small phones
   const isNew = params.id === 'new';
   const [existing] = useState(() => (isNew ? undefined : getTransaction(getDb(), params.id)));
+  // The link would lead to "no longer exists" once its rule is deleted.
+  const [ruleId] = useState(() => (existing?.recurringId && getRecurring(getDb(), existing.recurringId) ? existing.recurringId : null));
 
   const [type, setType] = useState<TxType>(existing?.type ?? params.type ?? 'expense');
   const [amountText, setAmountText] = useState(existing ? poishaToInput(existing.amount) : '');
@@ -270,8 +272,8 @@ export default function TransactionScreen() {
           </View>
         </>
       ) : (
-        existing?.recurringId && (
-          <Button icon="repeat" onPress={() => router.push({ pathname: '/recurring/[id]', params: { id: existing.recurringId! } })}>
+        ruleId && (
+          <Button icon="repeat" onPress={() => router.push({ pathname: '/recurring/[id]', params: { id: ruleId } })}>
             {t('transaction.partOfRecurring')}
           </Button>
         )
