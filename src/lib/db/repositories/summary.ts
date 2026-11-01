@@ -3,14 +3,15 @@ import { and, between, count, desc, eq, isNotNull, isNull, max, not, sql, sum } 
 import { addMonths, monthOf, monthRange } from '@/utils/date';
 import { addPoisha, type Poisha } from '@/utils/money';
 
-import { categories, transactions } from '../schema';
+import { accounts, categories, transactions } from '../schema';
 import { touchesSavings } from './accounts';
 import type { LocalDb } from '../types';
 
 // Totals are always computed from transactions, never stored.
 // Rows on savings accounts (DPS, emergency fund…) are left out of every total.
 
-export type MonthTotals = { income: Poisha; expense: Poisha; balance: Poisha };
+/** `saved`: net money moved from regular wallets into savings accounts. `balance` is what's left after it. */
+export type MonthTotals = { income: Poisha; expense: Poisha; saved: Poisha; balance: Poisha };
 
 export type CategoryTotal = {
   categoryId: string | null;
@@ -36,7 +37,27 @@ export function monthTotals(db: LocalDb, month: string): MonthTotals {
   const get = (type: 'income' | 'expense') => (rows.find((r) => r.type === type)?.total ?? 0) as Poisha;
   const income = get('income');
   const expense = get('expense');
-  return { income, expense, balance: addPoisha(income, -expense as Poisha) };
+  const saved = savedInMonth(db, month);
+  return { income, expense, saved, balance: addPoisha(income, -expense as Poisha, -saved as Poisha) };
+}
+
+const isSavings = (accountId: typeof transactions.accountId | typeof transactions.toAccountId) =>
+  sql`exists (select 1 from ${accounts} where ${accounts.id} = ${accountId} and ${accounts.savings} = 1)`;
+
+/** Transfers into savings minus transfers back out. Not expenses, but the money is no longer left to spend. */
+function savedInMonth(db: LocalDb, month: string): Poisha {
+  const { start, end } = monthRange(month);
+  const row = db
+    .select({
+      total: sql<number>`coalesce(sum(case
+        when ${isSavings(transactions.toAccountId)} and not ${isSavings(transactions.accountId)} then ${transactions.amount}
+        when ${isSavings(transactions.accountId)} and not ${isSavings(transactions.toAccountId)} then -${transactions.amount}
+        else 0 end), 0)`.mapWith(Number),
+    })
+    .from(transactions)
+    .where(and(isNull(transactions.deletedAt), eq(transactions.type, 'transfer'), between(transactions.occurredOn, start, end)))
+    .get();
+  return (row?.total ?? 0) as Poisha;
 }
 
 /** Expense per category for the month, biggest first. Deleted categories keep their name. */

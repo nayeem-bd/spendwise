@@ -38,11 +38,11 @@ beforeEach(() => {
 });
 
 it('monthTotals counts only that month and ignores deleted rows', () => {
-  expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, balance: 5000000 - 60050 });
+  expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, saved: 0, balance: 5000000 - 60050 });
 });
 
 it('monthTotals for an empty month is zero', () => {
-  expect(monthTotals(db, '2025-01')).toEqual({ income: 0, expense: 0, balance: 0 });
+  expect(monthTotals(db, '2025-01')).toEqual({ income: 0, expense: 0, saved: 0, balance: 0 });
 });
 
 it('expenseByCategory sorts biggest first and counts transactions', () => {
@@ -86,7 +86,7 @@ it('transfers are left out of monthly totals and the category breakdown', () => 
     note: null,
     occurredOn: '2026-10-10',
   });
-  expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, balance: 5000000 - 60050 });
+  expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, saved: 0, balance: 5000000 - 60050 });
   expect(expenseByCategory(db, '2026-10')).toHaveLength(2);
 });
 
@@ -129,11 +129,19 @@ describe('savings accounts', () => {
     saveTransaction(db, USER, { type: 'expense', amount: 500 as Poisha, accountId: dps, categoryId: food, note: 'fee', occurredOn: '2026-10-06' });
   });
 
-  it('are left out of totals, categories, trend and daily spending', () => {
-    expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, balance: 5000000 - 60050 });
+  it('are left out of income, expense, categories, trend and daily spending', () => {
+    expect(monthTotals(db, '2026-10')).toEqual({ income: 5000000, expense: 60050, saved: 500000, balance: 5000000 - 60050 - 500000 });
     expect(expenseByCategory(db, '2026-10').find((c) => c.categoryId === food)?.total).toBe(50050);
     expect(monthlyTrend(db, '2026-10', 1)).toEqual([{ month: '2026-10', income: 5000000, expense: 60050 }]);
     expect(dailyExpense(db, '2026-10')[5]).toBe(0);
+  });
+
+  it('money moved into savings leaves the balance, and comes back when withdrawn', () => {
+    saveTransaction(db, USER, { type: 'transfer', amount: 200000 as Poisha, accountId: dps, toAccountId: cash, note: null, occurredOn: '2026-10-20' });
+    const other = createAccount(db, USER, { name: 'FDR', initialBalance: 0 as Poisha, icon: 'bank', color: '#000', savings: true }).id;
+    saveTransaction(db, USER, { type: 'transfer', amount: 99999 as Poisha, accountId: dps, toAccountId: other, note: null, occurredOn: '2026-10-21' });
+    expect(monthTotals(db, '2026-10')).toMatchObject({ expense: 60050, saved: 300000, balance: 5000000 - 60050 - 300000 });
+    expect(monthTotals(db, '2026-11').saved).toBe(0);
   });
 
   it('a row whose account is gone still counts in the main view', () => {
