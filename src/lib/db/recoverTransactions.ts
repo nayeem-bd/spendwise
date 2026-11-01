@@ -2,8 +2,9 @@ import type { LocalDb } from './types';
 
 /** True when `e` (or an error it wraps) is SQLite refusing a BEGIN because one is already open. */
 export function isNestedBeginError(e: unknown): boolean {
-  for (let err: unknown = e; err instanceof Error; err = err.cause) {
-    if (/within a transaction/i.test(err.message)) return true;
+  // Duck-typed, not instanceof Error: errors from a native module can come from another realm (seen under Jest).
+  for (let err = e as { message?: unknown; cause?: unknown } | null | undefined; err && typeof err === 'object'; err = err.cause as typeof err) {
+    if (/within a transaction/i.test(String(err.message))) return true;
   }
   return false;
 }
