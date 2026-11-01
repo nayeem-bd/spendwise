@@ -4,11 +4,13 @@ import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 're
 import { Button, Chip, Dialog, List, Portal, SegmentedButtons, Switch, Text, useTheme } from 'react-native-paper';
 
 import { translateError, useT } from '@/i18n/i18n';
+import { useFormat } from '@/i18n/useFormat';
 import { setLanguage } from '@/i18n/language';
 import { JoinSharedAccount } from '@/components/JoinSharedAccount';
 import { pendingChangeCount, signOut } from '@/lib/auth/auth';
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
+import { carryOverBalances } from '@/lib/db/repositories/carryover';
 import { listTransactions } from '@/lib/db/repositories/transactions';
 import { exportTransactions } from '@/lib/export/exportTransactions';
 import { page } from '@/components/layout';
@@ -16,6 +18,7 @@ import { ROW_ICON_INSET, rowIcon, Section } from '@/components/Section';
 import { canUseAppLock, setAppLock, useLockStore } from '@/lib/lock/lock';
 import { REMINDER_TIMES, remindersSupported, setReminder, useReminderStore } from '@/lib/reminder/reminder';
 import { syncNow } from '@/lib/sync/syncEngine';
+import { useMonthStore } from '@/store/month';
 import { showNotice } from '@/store/notice';
 import { setThemePreference, useThemeStore, type ThemePreference } from '@/store/theme';
 
@@ -27,6 +30,17 @@ export default function SettingsScreen() {
   const [confirm, setConfirm] = useState<{ pending: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const month = useMonthStore((st) => st.month);
+  const fmt = useFormat();
+
+  const carryOver = () => {
+    try {
+      const count = carryOverBalances(getDb(), user.id, month);
+      showNotice(count ? t(count === 1 ? 'settings.carryoverDoneOne' : 'settings.carryoverDone', { count, month: fmt.month(month) }) : t('settings.carryoverNone'));
+    } catch (e) {
+      showNotice(translateError(e));
+    }
+  };
   const lockEnabled = useLockStore((st) => st.enabled);
   const [lockAvailable, setLockAvailable] = useState(false);
   useEffect(() => {
@@ -109,6 +123,12 @@ export default function SettingsScreen() {
           left={rowIcon('repeat', '#7B1FA2')}
           right={chevron}
           onPress={() => router.push('/recurring')}
+        />
+        <List.Item
+          title={t('settings.carryover')}
+          description={t('settings.carryoverHint', { month: fmt.month(month) })}
+          left={rowIcon('calendar-arrow-right', '#607D8B')}
+          onPress={carryOver}
         />
         <List.Item
           title={t('settings.export')}

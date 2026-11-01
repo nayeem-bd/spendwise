@@ -33,6 +33,7 @@ function translations(userId: string): Map<string, { en: string; bn: string }> {
   const map = new Map<string, { en: string; bn: string }>();
   for (const c of DEFAULT_CATEGORIES) map.set(defaultRowId(userId, 'category', c.key), { en: c.name, bn: BN_CATEGORY[c.key] ?? c.name });
   for (const a of DEFAULT_ACCOUNTS) map.set(defaultRowId(userId, 'account', a.key), { en: a.name, bn: BN_ACCOUNT[a.key] ?? a.name });
+  map.set(defaultRowId(userId, 'category', 'carryover'), { en: 'Carryover', bn: 'আগের মাসের জের' });
   return map;
 }
 
