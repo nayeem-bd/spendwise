@@ -1,7 +1,8 @@
-import { and, asc, count, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
+import { and, asc, count, eq, getTableColumns, isNull, lte, notInArray, or, sql } from 'drizzle-orm';
 
 import type { Poisha } from '@/utils/money';
 
+import { defaultRowId } from '../defaults';
 import { newId } from '../id';
 import { accounts, transactions, type Account } from '../schema';
 import type { LocalDb } from '../types';
@@ -30,8 +31,20 @@ export function listAccounts(db: LocalDb): Account[] {
     .all();
 }
 
-/** Balances are computed from transactions, never stored. `savings` picks savings or regular accounts. */
-export function listAccountsWithBalance(db: LocalDb, savings: boolean): AccountWithBalance[] {
+/**
+ * The owner's "Carryover" income category. Its rows only move a balance into a
+ * month's totals, so wallet balances skip them (they'd count the money twice).
+ */
+export const carryoverCategoryId = (userId: string) => defaultRowId(userId, 'category', 'carryover');
+
+/**
+ * Balances are computed from transactions, never stored. `savings` picks savings or regular accounts.
+ * `asOf` ('YYYY-MM-DD') gives the balance at the end of that day.
+ */
+export function listAccountsWithBalance(db: LocalDb, savings: boolean, asOf?: string): AccountWithBalance[] {
+  // Carryover rows on an account are written by its owner, so each owner's category id covers them.
+  const owners = db.selectDistinct({ userId: accounts.userId }).from(accounts).all();
+  const carryover = owners.map((o) => carryoverCategoryId(o.userId));
   const movement = sql<number>`coalesce(sum(case
       when ${transactions.accountId} = ${accounts.id} and ${transactions.type} = 'income' then ${transactions.amount}
       when ${transactions.accountId} = ${accounts.id} then -${transactions.amount}
@@ -44,6 +57,8 @@ export function listAccountsWithBalance(db: LocalDb, savings: boolean): AccountW
       transactions,
       and(
         isNull(transactions.deletedAt),
+        asOf ? lte(transactions.occurredOn, asOf) : undefined,
+        or(isNull(transactions.categoryId), notInArray(transactions.categoryId, carryover)),
         sql`(${transactions.accountId} = ${accounts.id} or ${transactions.toAccountId} = ${accounts.id})`,
       ),
     )
