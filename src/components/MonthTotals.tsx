@@ -28,7 +28,7 @@ export function MonthTotals({ totals, dense = false, onCard = false }: { totals:
         dense={dense}
         tile={tile}
         // Savings rate, like Monarch: the share of income not spent.
-        caption={!dense && totals.income > 0 && totals.balance > 0 ? t('home.saved', { percent: Math.round((totals.balance / totals.income) * 100) }) : undefined}
+        caption={!dense && totals.income > totals.expense ? t('home.saved', { percent: Math.round(((totals.income - totals.expense) / totals.income) * 100) }) : undefined}
       />
     </View>
   );
