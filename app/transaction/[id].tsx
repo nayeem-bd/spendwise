@@ -12,7 +12,7 @@ import { applyKey, displayAmountText, evaluateAmount, hasOperator } from '@/comp
 import { useUser } from '@/lib/auth/store';
 import { getDb } from '@/lib/db/client';
 import { defaultRowId } from '@/lib/db/defaults';
-import { getAccount, listAccounts } from '@/lib/db/repositories/accounts';
+import { carryoverCategoryId, getAccount, listAccounts } from '@/lib/db/repositories/accounts';
 import { getCategory } from '@/lib/db/repositories/categories';
 import { memberEmail, sharingSummary } from '@/lib/db/repositories/sharing';
 import { addAttachment, deleteAttachment, listAttachments } from '@/lib/db/repositories/attachments';
@@ -86,6 +86,8 @@ export default function TransactionScreen() {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const categoryType = type === 'income' ? 'income' : 'expense';
+  // Carryover rows are tied to their wallet and stay out of its balance only while they keep this category.
+  const isCarryover = existing?.categoryId === carryoverCategoryId(user.id);
   const noteSuggestions = useLocalQuery(
     (db) => (type !== 'transfer' && categoryId ? frequentNotes(db, categoryId) : []),
     ['transactions'],
@@ -204,7 +206,7 @@ export default function TransactionScreen() {
 
   const color = type === 'transfer' ? theme.colors.onSurface : moneyColors(theme.dark)[type];
 
-  const typeSwitch = (
+  const typeSwitch = isCarryover ? null : (
     <SegmentedButtons
       value={type}
       onValueChange={(v) => changeType(v as TxType)}
@@ -250,7 +252,7 @@ export default function TransactionScreen() {
           <Text variant="titleSmall">{t('transaction.to')}</Text>
           <AccountChips accounts={accounts} value={selectedToAccountId} onChange={setToAccountId} disabledId={selectedAccountId} />
         </>
-      ) : (
+      ) : isCarryover ? null : (
         <>
           <Text variant="titleSmall">{t('transaction.category')}</Text>
           <CategoryGrid categories={categories} value={categoryId} onChange={setCategoryId} />
