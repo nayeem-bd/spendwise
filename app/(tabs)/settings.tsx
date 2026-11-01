@@ -36,7 +36,7 @@ export default function SettingsScreen() {
   const carryOver = () => {
     try {
       const count = carryOverBalances(getDb(), user.id, month);
-      showNotice(count ? t('settings.carryoverDone', { count, month: fmt.month(month) }) : t('settings.carryoverNone'));
+      showNotice(count ? t(count === 1 ? 'settings.carryoverDoneOne' : 'settings.carryoverDone', { count, month: fmt.month(month) }) : t('settings.carryoverNone'));
     } catch (e) {
       showNotice(translateError(e));
     }

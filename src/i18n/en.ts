@@ -180,6 +180,7 @@ export const en = {
   'settings.carryover': 'Carry over balances',
   'settings.carryoverHint': "Add each wallet's balance at the end of last month to {month}",
   'settings.carryoverDone': 'Carried over {count} wallets to {month}',
+  'settings.carryoverDoneOne': 'Carried over 1 wallet to {month}',
   'settings.carryoverNone': 'No wallet had money left at the end of last month',
   'settings.appearance': 'Appearance',
   'settings.themeSystem': 'System',

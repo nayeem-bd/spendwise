@@ -166,6 +166,7 @@ export const bn: Record<StringKey, string> = {
   'settings.carryover': 'ব্যালেন্স জের টানুন',
   'settings.carryoverHint': 'গত মাসের শেষে প্রতিটি ওয়ালেটের ব্যালেন্স {month}-এ যোগ করুন',
   'settings.carryoverDone': '{count}টি ওয়ালেটের ব্যালেন্স {month}-এ যোগ হয়েছে',
+  'settings.carryoverDoneOne': '১টি ওয়ালেটের ব্যালেন্স {month}-এ যোগ হয়েছে',
   'settings.carryoverNone': 'গত মাসের শেষে কোনো ওয়ালেটে টাকা ছিল না',
   'settings.appearance': 'চেহারা',
   'settings.themeSystem': 'সিস্টেম',
