@@ -5,7 +5,8 @@ import { Button, Text } from 'react-native-paper';
 
 import { translate } from '@/i18n/i18n';
 
-import { DatabaseLockedError, openDb, type Db } from './client';
+import { DatabaseLockedError, openDb, resetDatabase, type Db } from './client';
+import { isCorruptError } from './recoverTransactions';
 import migrations from './migrations/migrations';
 
 const LOCKED_RETRY_MS = 3000;
@@ -19,6 +20,12 @@ export function DatabaseGate({ children }: { children: ReactNode }) {
     setError(null);
     openDb().then(setDb, setError);
   }, []);
+  const reset = useCallback(() => {
+    // Show the spinner (no second tap on Reset) and unmount Migrate, so it migrates the new file.
+    setError(null);
+    setDb(null);
+    resetDatabase().then(open, setError);
+  }, [open]);
 
   useEffect(open, [open]);
 
@@ -30,15 +37,19 @@ export function DatabaseGate({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [error, open]);
 
-  if (error) return <Message text={describe(error)} onRetry={open} />;
+  if (error) return <ErrorView error={error} onRetry={open} onReset={reset} />;
   if (!db) return <Loading />;
-  return <Migrate db={db}>{children}</Migrate>;
+  return (
+    <Migrate db={db} onReset={reset}>
+      {children}
+    </Migrate>
+  );
 }
 
-function Migrate({ db, children }: { db: Db; children: ReactNode }) {
+function Migrate({ db, onReset, children }: { db: Db; onReset: () => void; children: ReactNode }) {
   const { success, error } = useMigrations(db, migrations);
 
-  if (error) return <Message text={describe(error)} />;
+  if (error) return <ErrorView error={error} onReset={onReset} />;
   if (!success) return <Loading />;
   return children;
 }
@@ -57,8 +68,18 @@ function Loading() {
   );
 }
 
+/** A damaged file gets a reset (retrying can't fix it); anything else gets the plain message. */
+function ErrorView({ error, onRetry, onReset }: { error: Error; onRetry?: () => void; onReset: () => void }) {
+  if (isCorruptError(error)) {
+    return (
+      <Message text={translate('error.corruptDb')} onRetry={onReset} retryLabel={translate('error.corruptDbReset')} />
+    );
+  }
+  return <Message text={describe(error)} onRetry={onRetry} />;
+}
+
 // Paper's Text and Button follow the theme (react-native's Text is black on the dark background).
-function Message({ text, onRetry }: { text: string; onRetry?: () => void }) {
+function Message({ text, onRetry, retryLabel }: { text: string; onRetry?: () => void; retryLabel?: string }) {
   return (
     <View style={styles.center}>
       <Text variant="bodyLarge" style={styles.text}>
@@ -66,7 +87,7 @@ function Message({ text, onRetry }: { text: string; onRetry?: () => void }) {
       </Text>
       {onRetry && (
         <Button mode="contained-tonal" onPress={onRetry}>
-          {translate('common.retry')}
+          {retryLabel ?? translate('common.retry')}
         </Button>
       )}
     </View>

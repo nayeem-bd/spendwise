@@ -1,13 +1,19 @@
 import type { LocalDb } from './types';
 
-/** True when `e` (or an error it wraps) is SQLite refusing a BEGIN because one is already open. */
-export function isNestedBeginError(e: unknown): boolean {
+/** True when the message of `e`, or of any error it wraps (`cause`), matches `re`. */
+function errorChainMatches(e: unknown, re: RegExp): boolean {
   // Duck-typed, not instanceof Error: errors from a native module can come from another realm (seen under Jest).
   for (let err = e as { message?: unknown; cause?: unknown } | null | undefined; err && typeof err === 'object'; err = err.cause as typeof err) {
-    if (/within a transaction/i.test(String(err.message))) return true;
+    if (re.test(String(err.message))) return true;
   }
   return false;
 }
+
+/** True when `e` (or an error it wraps) is SQLite refusing a BEGIN because one is already open. */
+export const isNestedBeginError = (e: unknown) => errorChainMatches(e, /within a transaction/i);
+
+/** SQLITE_CORRUPT / SQLITE_NOTADB: the file is damaged and no retry fixes it. */
+export const isCorruptError = (e: unknown) => errorChainMatches(e, /malformed|not a database|code (11|26)\b/i);
 
 /**
  * Makes `db.transaction()` recover from a transaction left open on the
