@@ -1,5 +1,5 @@
 import { drizzle } from 'drizzle-orm/expo-sqlite';
-import { openDatabaseAsync } from 'expo-sqlite';
+import { deleteDatabaseAsync, openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
 import { recoverStuckTransactions } from './recoverTransactions';
@@ -13,6 +13,7 @@ export type Db = ReturnType<typeof createDb>;
 
 let instance: Db | null = null;
 let opening: Promise<Db> | null = null;
+let handle: SQLiteDatabase | null = null;
 
 /**
  * Opens the local database once. Must be async: on web the first call has to
@@ -22,6 +23,7 @@ let opening: Promise<Db> | null = null;
 export function openDb(): Promise<Db> {
   opening ??= (async () => {
     const expoDb = await openWithRetry();
+    handle = expoDb;
     if (Platform.OS !== 'web') {
       await expoDb.execAsync('PRAGMA journal_mode = WAL;');
     } else {
@@ -39,6 +41,18 @@ export function openDb(): Promise<Db> {
     opening = null;
   });
   return opening;
+}
+
+/**
+ * Deletes the damaged local file so the next openDb() starts empty. Unsynced
+ * changes in it are lost; everything synced comes back on the next pull.
+ */
+export async function resetDatabase(): Promise<void> {
+  await handle?.closeAsync().catch(() => undefined); // a corrupt file may refuse to close cleanly
+  handle = null;
+  instance = null;
+  opening = null;
+  await deleteDatabaseAsync(DATABASE_NAME);
 }
 
 /** Web: another page or tab still holds the OPFS database file. */

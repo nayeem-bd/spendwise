@@ -246,6 +246,8 @@ export const bn: Record<StringKey, string> = {
   'update.ready': 'SpendWise-এর নতুন সংস্করণ প্রস্তুত।',
   'update.reload': 'রিলোড',
 
+  'error.corruptDb': 'এই ডিভাইসে সংরক্ষিত ডেটা নষ্ট হয়ে গেছে। রিসেট করলে সিঙ্ক হওয়া ডেটা আবার ডাউনলোড হবে। যেসব পরিবর্তন এখনো সিঙ্ক হয়নি সেগুলো হারিয়ে যাবে।',
+  'error.corruptDbReset': 'লোকাল ডেটা রিসেট করুন',
   'error.lockedTab': 'SpendWise অন্য একটি ট্যাব বা উইন্ডোতে খোলা আছে। সেটি বন্ধ করলে এই পেজটি নিজেই খুলবে।',
   'error.Enter an amount above ৳0': '৳০-এর বেশি পরিমাণ লিখুন',
   'error.Enter a budget above ৳0': '৳০-এর বেশি বাজেট লিখুন',
